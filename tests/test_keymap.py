@@ -145,7 +145,7 @@ class VocabularyTest(unittest.TestCase):
         self.assertEqual(cornix.to_legacy("KC_LSFT"), "KC_LSHIFT")
 
     def test_nested_modifiers_and_mod_taps_are_accepted(self):
-        self.assertTrue(cornix.is_valid_keycode("LALT(LGUI(KC_POWER))"))
+        self.assertTrue(cornix.is_valid_keycode("LALT(LGUI(KC_PWR))"))
         self.assertTrue(cornix.is_valid_keycode("LSFT_T(KC_ESCAPE)"))
         self.assertFalse(cornix.is_valid_keycode("LSFT_T(MO(1))"))
 
@@ -161,7 +161,7 @@ class PortLedgerTest(unittest.TestCase):
             with self.subTest(keycode=keycode, verdict=verdict):
                 if verdict == keymap.KEPT:
                     self.assertIn(keycode, self.used)
-                elif verdict == keymap.WRAPPED:
+                elif verdict in (keymap.WRAPPED, keymap.REPLACED):
                     self.assertIn(detail, self.used)
                     self.assertNotIn(keycode, self.used)
                 elif verdict == keymap.DROPPED:
@@ -174,7 +174,7 @@ class PortLedgerTest(unittest.TestCase):
         recorded |= {
             detail
             for verdict, detail in keymap.ERGODOX_DISPOSITION.values()
-            if verdict == keymap.WRAPPED
+            if verdict in (keymap.WRAPPED, keymap.REPLACED)
         }
         # Keycodes that are new to the Cornix rather than ported from the ErgoDox.
         recorded |= {"USER00", "USER01", "USER02"}
@@ -215,6 +215,12 @@ class RenderTest(unittest.TestCase):
         for value in used_keycodes(build_document()):
             with self.subTest(keycode=value):
                 self.assertLessEqual(len(render.label(value)), render.CELL)
+
+    def test_sleep_is_a_system_key_not_the_ergodox_chord(self):
+        # Vial's keycode table has no name for HID 0x66, so the Alt+Gui+Power
+        # chord cannot be expressed; System Sleep replaces it.  See adr/0007.
+        self.assertEqual(cornix.layer_to_matrix(keymap.BASE_LAYER)[5][6], "KC_SLEP")
+        self.assertFalse(cornix.is_valid_keycode("KC_POWER"))
 
     def test_diff_reports_a_changed_slot(self):
         document = build_document()

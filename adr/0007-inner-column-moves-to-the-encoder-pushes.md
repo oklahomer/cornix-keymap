@@ -22,12 +22,17 @@ half, per layer:
 
 | layer | left `[2][6]` | right `[5][6]` |
 | --- | --- | --- |
-| base | `LALT(KC_SPACE)` | sleep, `LALT(LGUI(KC_POWER))` |
+| base | `LALT(KC_SPACE)` | sleep, `KC_SLEP` |
 | symbol | `RALT(KC_M)`, mission control | unused |
 | media | unused | unused |
 
 Two of the four old inner-column keys switched virtual desktops. They were no longer
 in use and were dropped rather than relocated, which is what freed the slots.
+
+The old sleep key was `Alt+Gui+`HID usage 0x66, the chord macOS reads as
+"sleep". Vial's keycode table has no name for 0x66, so the chord cannot be written
+at all; `KC_SLEP` (System Sleep) is used instead. It is one key rather than three,
+and it asks the operating system to sleep directly rather than imitating a shortcut.
 
 ## Consequences
 

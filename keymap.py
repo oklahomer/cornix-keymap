@@ -64,7 +64,7 @@ four QMK Settings values it depends on.
     ],
     #              7,5         7,4                  7,3      7,2      7,1  7,0
     right_bottom=["KC_RGUI",  "LCTL_T(KC_SPACE)",  "MO(1)", "MO(2)",  XX,  "KC_RALT"],
-    right_encoder="LALT(LGUI(KC_POWER))",
+    right_encoder="KC_SLEP",
 )
 
 
@@ -173,11 +173,13 @@ QMK_SETTINGS = {
 # this table and fails if a claim stops being true, so a key cannot quietly go
 # missing during a refactor.
 #
-#   ("kept",    reason)      -- appears verbatim in LAYERS
-#   ("wrapped", new_keycode) -- survives, but wrapped; new_keycode must appear
-#   ("dropped", reason)      -- deliberately gone
+#   ("kept",     reason)      -- appears verbatim in LAYERS
+#   ("wrapped",  new_keycode) -- survives, but wrapped; new_keycode must appear
+#   ("replaced", new_keycode) -- the intent survives under a different keycode
+#   ("dropped",  reason)      -- deliberately gone
 KEPT = "kept"
 WRAPPED = "wrapped"
+REPLACED = "replaced"
 DROPPED = "dropped"
 
 ERGODOX_DISPOSITION: dict[str, tuple[str, str]] = {
@@ -219,7 +221,7 @@ ERGODOX_DISPOSITION: dict[str, tuple[str, str]] = {
     "OSL(3)": (DROPPED, "APP layer removed; press Right Option + letter instead"),
     # -- chords ------------------------------------------------------------
     "LALT(KC_SPACE)": (KEPT, "moved to the left encoder push"),
-    "LALT(LGUI(KC_POWER))": (KEPT, "sleep, moved to the right encoder push"),
+    "LALT(LGUI(KC_POWER))": (REPLACED, "KC_SLEP"),
     "LCTL(KC_LBRACKET)": (KEPT, "must emit LEFT control"),
     "RALT(KC_M)": (KEPT, "mission control, moved to the left encoder push on SYMB"),
     "LCTL(KC_1)": (DROPPED, "desktop switching, no longer used"),

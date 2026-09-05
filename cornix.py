@@ -96,6 +96,11 @@ QMK_SETTING_NAMES = {
 # Vial on this firmware speaks the *legacy* QMK aliases (KC_LSHIFT, not
 # KC_LSFT).  A string Vial cannot parse silently becomes KC_NO on the board, so
 # the generator refuses to emit anything outside this vocabulary.
+#
+# The names come from Vial's own keycode table (vial-gui, keycodes_v6).  Note
+# what is *not* in it: HID usage 0x66, 'Keyboard Power', has no name there, so
+# the ErgoDox's Alt+Gui+0x66 sleep chord cannot be expressed.  KC_SLEP (0xA6,
+# System Sleep) is used instead -- see adr/0007.
 
 _ALPHA = {f"KC_{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"}
 _DIGIT = {f"KC_{d}" for d in "1234567890"}
@@ -103,14 +108,14 @@ _FKEY = {f"KC_F{n}" for n in range(1, 25)}
 _NAMED = {
     KC_NO, KC_TRNS,
     "KC_TAB", "KC_ESCAPE", "KC_SPACE", "KC_BSPACE", "KC_ENTER", "KC_DELETE",
-    "KC_CAPSLOCK", "KC_APP", "KC_INSERT", "KC_HOME", "KC_END", "KC_PGUP", "KC_PGDN",
+    "KC_CAPSLOCK", "KC_APPLICATION", "KC_INSERT", "KC_HOME", "KC_END", "KC_PGUP", "KC_PGDOWN",
     "KC_LCTRL", "KC_LSHIFT", "KC_LALT", "KC_LGUI",
     "KC_RCTRL", "KC_RSHIFT", "KC_RALT", "KC_RGUI",
     "KC_MINUS", "KC_EQUAL", "KC_LBRACKET", "KC_RBRACKET", "KC_BSLASH",
     "KC_SCOLON", "KC_QUOTE", "KC_GRAVE", "KC_COMMA", "KC_DOT", "KC_SLASH",
     "KC_UP", "KC_DOWN", "KC_LEFT", "KC_RIGHT",
     "KC_MUTE", "KC_VOLU", "KC_VOLD",
-    "KC_POWER", "KC_SYSTEM_POWER",
+    "KC_PWR", "KC_SLEP", "KC_WAKE", "KC_EJCT",
     "KC_MS_L", "KC_MS_R", "KC_MS_U", "KC_MS_D",
     "KC_BTN1", "KC_BTN2", "KC_BTN3", "KC_WH_U", "KC_WH_D", "KC_WH_L", "KC_WH_R",
     "QK_BOOT",
@@ -157,7 +162,7 @@ def is_valid_keycode(keycode: str) -> bool:
         # A mod-tap holds a plain key, never another wrapper.
         return inner in BASIC_KEYCODES
     if wrapper in MODIFIER_WRAPPERS:
-        # Modifiers nest: LALT(LGUI(KC_POWER)) is one key with two modifiers.
+        # Modifiers nest: LALT(LGUI(KC_PWR)) is one key with two modifiers.
         return is_valid_keycode(inner)
     return False
 
@@ -172,7 +177,7 @@ def validate_keycode(keycode: str, where: str) -> str:
 def atoms(keycode: str) -> frozenset[str]:
     """Every basic keycode reachable inside ``keycode``.
 
-    ``LALT(LGUI(KC_POWER))`` yields ``{KC_LALT, KC_LGUI, KC_POWER}`` and
+    ``LALT(LGUI(KC_PWR))`` yields ``{KC_LALT, KC_LGUI, KC_PWR}`` and
     ``LSFT_T(KC_ESCAPE)`` yields ``{KC_LSHIFT, KC_ESCAPE}``, so a coverage test
     can ask "did this ErgoDox key survive anywhere" without caring how it is
     now wrapped.

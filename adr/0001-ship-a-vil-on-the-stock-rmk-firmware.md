@@ -29,9 +29,10 @@ Stay on the stock firmware and ship a `.vil`.
   previous file. Both work wirelessly.
 - No custom firmware code. Behaviour that the ErgoDox implemented in C has to be
   expressed with keycodes and firmware settings instead. See ADR 4.
-- The keymap depends on what this firmware version's Vial implementation accepts.
-  Anything it cannot parse becomes a dead key rather than an error, so the generator
-  validates every keycode string before writing the file, and the README lists the
-  checks to run on the hardware after loading a new layout.
+- The keymap can only say what Vial's keycode vocabulary can say. That is not a
+  theoretical limit: it already cost the old sleep chord, which used a HID usage
+  Vial has no name for (ADR 7). Anything Vial cannot parse becomes a dead key rather
+  than an error, so the generator validates every keycode string before writing the
+  file, and the README lists the checks to run on the hardware after loading.
 - Options 2 and 3 stay open. Both would start from the layer definitions in
   `keymap.py`, which are firmware-independent.
