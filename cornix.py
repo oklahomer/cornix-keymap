@@ -97,10 +97,16 @@ QMK_SETTING_NAMES = {
 # KC_LSFT).  A string Vial cannot parse silently becomes KC_NO on the board, so
 # the generator refuses to emit anything outside this vocabulary.
 #
-# The names come from Vial's own keycode table (vial-gui, keycodes_v6).  Note
-# what is *not* in it: HID usage 0x66, 'Keyboard Power', has no name there, so
-# the ErgoDox's Alt+Gui+0x66 sleep chord cannot be expressed.  KC_SLEP (0xA6,
-# System Sleep) is used instead -- see adr/0007.
+# The names come from Vial's own keycode table (vial-gui, keycodes_v6), and the
+# spellings are the ones Vial itself writes on export, so that a layout exported
+# from the GUI compares equal to the generated artifact.  Two rules follow from
+# how Vial serialises a keycode, and both are enforced below:
+#
+# - A chord with more than one modifier has a single combined name.  Vial writes
+#   Ctrl+Gui+Q as LCG(KC_Q), never as LCTL(LGUI(KC_Q)), so modifier wrappers do
+#   not nest here either.
+# - A keycode with no name at all is written as a bare hex string.  Nothing in
+#   this keymap needs that, but see adr/0007 for the one that nearly did.
 
 _ALPHA = {f"KC_{c}" for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"}
 _DIGIT = {f"KC_{d}" for d in "1234567890"}
@@ -122,8 +128,12 @@ _NAMED = {
 }
 BASIC_KEYCODES = frozenset(_ALPHA | _DIGIT | _FKEY | _NAMED)
 
-MODIFIER_WRAPPERS = ("LCTL", "LSFT", "LALT", "LGUI", "RCTL", "RSFT", "RALT", "RGUI")
-MODTAP_WRAPPERS = tuple(f"{m}_T" for m in MODIFIER_WRAPPERS)
+SIMPLE_MODIFIERS = ("LCTL", "LSFT", "LALT", "LGUI", "RCTL", "RSFT", "RALT", "RGUI")
+# One name per modifier *combination*: LCG is Ctrl+Gui, LAG is Alt+Gui, MEH is
+# Ctrl+Shift+Alt, HYPR adds Gui.  Vial always writes the combined name.
+COMBINED_MODIFIERS = ("C_S", "HYPR", "LAG", "LCA", "LCAG", "LCG", "LSA", "MEH", "RCG", "SGUI")
+MODIFIER_WRAPPERS = SIMPLE_MODIFIERS + COMBINED_MODIFIERS
+MODTAP_WRAPPERS = tuple(f"{m}_T" for m in MODIFIER_WRAPPERS) + ("ALL_T", "RCAG_T", "RSA_T")
 
 _RE_LAYER = re.compile(r"^(MO|OSL|TO|TG|TT|DF)\((\d)\)$")
 _RE_USER = re.compile(r"^USER(\d{2})$")
@@ -138,6 +148,23 @@ MODERN_TO_LEGACY = {
     "KC_RBRC": "KC_RBRACKET", "KC_MINS": "KC_MINUS", "KC_EQL": "KC_EQUAL",
     "KC_COMM": "KC_COMMA", "KC_SLSH": "KC_SLASH", "KC_DEL": "KC_DELETE",
     "KC_CAPS": "KC_CAPSLOCK", "KC_SPC": "KC_SPACE",
+}
+
+
+#: Which modifiers each wrapper name stands for.
+MODIFIER_ATOMS = {
+    "LCTL": ("KC_LCTRL",), "LSFT": ("KC_LSHIFT",), "LALT": ("KC_LALT",), "LGUI": ("KC_LGUI",),
+    "RCTL": ("KC_RCTRL",), "RSFT": ("KC_RSHIFT",), "RALT": ("KC_RALT",), "RGUI": ("KC_RGUI",),
+    "C_S": ("KC_LCTRL", "KC_LSHIFT"),
+    "LCA": ("KC_LCTRL", "KC_LALT"),
+    "LCG": ("KC_LCTRL", "KC_LGUI"),
+    "LSA": ("KC_LSHIFT", "KC_LALT"),
+    "LAG": ("KC_LALT", "KC_LGUI"),
+    "SGUI": ("KC_LSHIFT", "KC_LGUI"),
+    "LCAG": ("KC_LCTRL", "KC_LALT", "KC_LGUI"),
+    "MEH": ("KC_LCTRL", "KC_LSHIFT", "KC_LALT"),
+    "HYPR": ("KC_LCTRL", "KC_LSHIFT", "KC_LALT", "KC_LGUI"),
+    "RCG": ("KC_RCTRL", "KC_RGUI"),
 }
 
 
@@ -162,8 +189,10 @@ def is_valid_keycode(keycode: str) -> bool:
         # A mod-tap holds a plain key, never another wrapper.
         return inner in BASIC_KEYCODES
     if wrapper in MODIFIER_WRAPPERS:
-        # Modifiers nest: LALT(LGUI(KC_PWR)) is one key with two modifiers.
-        return is_valid_keycode(inner)
+        # Deliberately not recursive: a two-modifier chord has its own name in
+        # Vial (LCG, LAG, MEH...), and writing it as nested wrappers would make
+        # the artifact differ from what Vial exports for the same key.
+        return inner in BASIC_KEYCODES
     return False
 
 
@@ -177,10 +206,9 @@ def validate_keycode(keycode: str, where: str) -> str:
 def atoms(keycode: str) -> frozenset[str]:
     """Every basic keycode reachable inside ``keycode``.
 
-    ``LALT(LGUI(KC_PWR))`` yields ``{KC_LALT, KC_LGUI, KC_PWR}`` and
-    ``LSFT_T(KC_ESCAPE)`` yields ``{KC_LSHIFT, KC_ESCAPE}``, so a coverage test
-    can ask "did this ErgoDox key survive anywhere" without caring how it is
-    now wrapped.
+    ``LCG(KC_Q)`` yields ``{KC_LCTRL, KC_LGUI, KC_Q}`` and ``LSFT_T(KC_ESCAPE)``
+    yields ``{KC_LSHIFT, KC_ESCAPE}``, so a coverage test can ask "did this
+    ErgoDox key survive anywhere" without caring how it is now wrapped.
     """
     if keycode in BASIC_KEYCODES:
         return frozenset({keycode})
@@ -191,9 +219,7 @@ def atoms(keycode: str) -> frozenset[str]:
         return frozenset()
     wrapper, inner = wrapped.group(1), wrapped.group(2)
     base = wrapper[:-2] if wrapper.endswith("_T") else wrapper
-    mod = {"LCTL": "KC_LCTRL", "LSFT": "KC_LSHIFT", "LALT": "KC_LALT", "LGUI": "KC_LGUI",
-           "RCTL": "KC_RCTRL", "RSFT": "KC_RSHIFT", "RALT": "KC_RALT", "RGUI": "KC_RGUI"}
-    return frozenset({mod[base]}) | atoms(inner)
+    return frozenset(MODIFIER_ATOMS.get(base, ())) | atoms(inner)
 
 
 # --------------------------------------------------------------------------

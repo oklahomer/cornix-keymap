@@ -19,7 +19,7 @@ Encoder rotation (unchanged from the stock keymap): encoder 0: Vol- / Vol+, enco
 |LShft |  Z   |  X   |  C   |  V   |  B   |    |  N   |  M   |  ,   |  .   |  /   |RShft |
 `------+------+------+------+------+------'    `------+------+------+------+------+------'
 
-  encoder push   [2,6] OptSpc     [5,6] SLEEP
+  encoder push   [2,6] OptSpc     [5,6] Lock
 
   ,------+------+------.  ,------+------+------.    ,------+------+------.  ,------+------+------.
   | LAlt |      |  L2  |  |  L1  |Esc/S | LGui |    | RGui |Spc/C |  L1  |  |  L2  |      | RAlt |
@@ -34,7 +34,7 @@ Encoder rotation (unchanged from the stock keymap): encoder 0: Vol- / Vol+, enco
 | 2 (L) | `KC_LSHIFT` | `KC_Z` | `KC_X` | `KC_C` | `KC_V` | `KC_B` | `LALT(KC_SPACE)` |
 | 3 (L) | `KC_LALT` | `KC_NO` | `MO(2)` | `MO(1)` | `LSFT_T(KC_ESCAPE)` | `KC_LGUI` | `-` |
 | 4 (R) | `KC_BSPACE` | `KC_P` | `KC_O` | `KC_I` | `KC_U` | `KC_Y` | `-` |
-| 5 (R) | `KC_ENTER` | `KC_SCOLON` | `KC_L` | `KC_K` | `KC_J` | `KC_H` | `KC_SLEP` |
+| 5 (R) | `KC_ENTER` | `KC_SCOLON` | `KC_L` | `KC_K` | `KC_J` | `KC_H` | `LCG(KC_Q)` |
 | 6 (R) | `KC_RSHIFT` | `KC_SLASH` | `KC_DOT` | `KC_COMMA` | `KC_M` | `KC_N` | `-` |
 | 7 (R) | `KC_RALT` | `KC_NO` | `MO(2)` | `MO(1)` | `LCTL_T(KC_SPACE)` | `KC_RGUI` | `-` |
 

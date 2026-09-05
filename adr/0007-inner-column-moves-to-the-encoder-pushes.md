@@ -22,17 +22,36 @@ half, per layer:
 
 | layer | left `[2][6]` | right `[5][6]` |
 | --- | --- | --- |
-| base | `LALT(KC_SPACE)` | sleep, `KC_SLEP` |
+| base | `LALT(KC_SPACE)` | lock screen, `LCG(KC_Q)` |
 | symbol | `RALT(KC_M)`, mission control | unused |
 | media | unused | unused |
 
 Two of the four old inner-column keys switched virtual desktops. They were no longer
 in use and were dropped rather than relocated, which is what freed the slots.
 
-The old sleep key was `Alt+Gui+`HID usage 0x66, the chord macOS reads as
-"sleep". Vial's keycode table has no name for 0x66, so the chord cannot be written
-at all; `KC_SLEP` (System Sleep) is used instead. It is one key rather than three,
-and it asks the operating system to sleep directly rather than imitating a shortcut.
+### The right encoder locks the screen; it does not sleep
+
+The old keyboard slept the machine from this key: Option+Command+Power, sent as two
+modifiers plus HID usage `0x66`, "Keyboard Power". Locking the screen is what is
+actually wanted from a key next to the hands, so this is a deliberate change of
+function rather than a transliteration. On macOS that is Ctrl+Cmd+Q.
+
+Getting there was not obvious, and the detour is worth recording:
+
+- `KC_SLEP` (System Sleep, `0xA6`) does nothing on this keyboard. It is a *System
+  Control* usage, sent on its own HID report, and that report is evidently not
+  reaching the host on this firmware and transport. Do not reach for it again.
+- The old chord cannot be written by name either. Vial's keycode table has no entry
+  for `0x66` — it skips from `0x65` to `0x67`. It *can* still be expressed: Vial
+  writes a value it cannot name as a bare hex string and reads it back through an
+  expression evaluator, so `"0xc66"` (`(LALT | LGUI) << 8 | 0x66`) round-trips
+  through the GUI intact. That escape hatch exists for any future keycode with no
+  name; nothing in this keymap needs it now.
+
+The key is written `LCG(KC_Q)`, not `LCTL(LGUI(KC_Q))`. Both resolve to `0x914`, but
+Vial gives every modifier *combination* a single name and writes that one on export,
+so the nested spelling would come back changed and register as drift. The generator
+rejects nested modifier wrappers for that reason.
 
 ## Consequences
 

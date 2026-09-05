@@ -34,7 +34,7 @@ BASE_LAYER = Layer(
 |-----+-----+-----+-----+-----+-----|                 |-----+-----+-----+-----+-----+-----|
 |LCtrl|  A  |  S  |  D  |  F  |  G  |                 |  H  |  J  |  K  |  L  |  ;  |Enter|
 |-----+-----+-----+-----+-----+-----+-----.     ,-----+-----+-----+-----+-----+-----+-----|
-|LShft|  Z  |  X  |  C  |  V  |  B  |Opt+ |     |SLEEP|  N  |  M  |  ,  |  .  |  /  |RShft|
+|LShft|  Z  |  X  |  C  |  V  |  B  |Opt+ |     |Lock |  N  |  M  |  ,  |  .  |  /  |RShft|
 `-----+-----+-----+-----+-----+-----|Space|     |     |-----+-----+-----+-----+-----+-----'
                                     `-----'     `-----'
                                      [2,6]       [5,6]      <- encoder push-buttons
@@ -64,7 +64,9 @@ four QMK Settings values it depends on.
     ],
     #              7,5         7,4                  7,3      7,2      7,1  7,0
     right_bottom=["KC_RGUI",  "LCTL_T(KC_SPACE)",  "MO(1)", "MO(2)",  XX,  "KC_RALT"],
-    right_encoder="KC_SLEP",
+    # Ctrl+Cmd+Q, the macOS lock-screen shortcut.  Vial names a two-modifier
+    # chord with a single wrapper, so this is LCG(...) rather than nested.
+    right_encoder="LCG(KC_Q)",
 )
 
 
@@ -221,7 +223,10 @@ ERGODOX_DISPOSITION: dict[str, tuple[str, str]] = {
     "OSL(3)": (DROPPED, "APP layer removed; press Right Option + letter instead"),
     # -- chords ------------------------------------------------------------
     "LALT(KC_SPACE)": (KEPT, "moved to the left encoder push"),
-    "LALT(LGUI(KC_POWER))": (REPLACED, "KC_SLEP"),
+    # The ErgoDox chord slept the machine.  Locking the screen is what is
+    # actually wanted from that key, so it is a different shortcut, not a
+    # transliteration of the old one.  See adr/0007.
+    "LALT(LGUI(KC_POWER))": (REPLACED, "LCG(KC_Q)"),
     "LCTL(KC_LBRACKET)": (KEPT, "must emit LEFT control"),
     "RALT(KC_M)": (KEPT, "mission control, moved to the left encoder push on SYMB"),
     "LCTL(KC_1)": (DROPPED, "desktop switching, no longer used"),

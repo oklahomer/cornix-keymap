@@ -37,7 +37,8 @@ SHORT = {
     "KC_COMMA": ",", "KC_DOT": ".", "KC_SLASH": "/",
     "KC_UP": "Up", "KC_DOWN": "Down", "KC_LEFT": "Left", "KC_RIGHT": "Right",
     "KC_MUTE": "Mute", "KC_VOLU": "Vol+", "KC_VOLD": "Vol-",
-    "KC_PWR": "Power", "KC_SLEP": "SLEEP", "KC_WAKE": "Wake", "KC_EJCT": "Eject",
+    "KC_PWR": "Power", "KC_SLEP": "Sleep", "KC_WAKE": "Wake", "KC_EJCT": "Eject",
+    "LCG(KC_Q)": "Lock",
     "KC_MS_L": "MsLft", "KC_MS_R": "MsRgt", "KC_MS_U": "MsUp", "KC_MS_D": "MsDwn",
     "KC_BTN1": "Lclk", "KC_BTN2": "Rclk", "KC_BTN3": "Mclk",
     "KC_WH_U": "WhUp", "KC_WH_D": "WhDn", "KC_WH_L": "WhLft", "KC_WH_R": "WhRgt",
@@ -47,7 +48,8 @@ SHORT = {
     "LCTL_T(KC_SPACE)": "Spc/C",
 }
 MOD_SHORT = {"LCTL": "Ctl", "LSFT": "Sft", "LALT": "Opt", "LGUI": "Cmd",
-             "RCTL": "RCtl", "RSFT": "RSft", "RALT": "RAlt", "RGUI": "RCmd"}
+             "RCTL": "RCtl", "RSFT": "RSft", "RALT": "RAlt", "RGUI": "RCmd",
+             "LCG": "CtlCmd", "LAG": "OptCmd", "MEH": "Meh", "HYPR": "Hypr"}
 MOD_LETTER = {"LCTL": "C", "LSFT": "S", "LALT": "A", "LGUI": "G",
               "RCTL": "C", "RSFT": "S", "RALT": "A", "RGUI": "G"}
 
@@ -73,8 +75,8 @@ def label(value) -> str:
     if wrapped:
         wrapper, inner = wrapped.group(1), wrapped.group(2)
         if wrapper.endswith("_T"):
-            return f"{label(inner)}/{MOD_LETTER[wrapper[:-2]]}"[:CELL]
-        return f"{MOD_SHORT[wrapper]}+{label(inner)}"[:CELL]
+            return f"{label(inner)}/{MOD_LETTER.get(wrapper[:-2], '?')}"[:CELL]
+        return f"{MOD_SHORT.get(wrapper, wrapper)}+{label(inner)}"[:CELL]
     if value.startswith("KC_"):
         return value[3:][:CELL]
     return value[:CELL]

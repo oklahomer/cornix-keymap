@@ -144,8 +144,13 @@ class VocabularyTest(unittest.TestCase):
         self.assertFalse(cornix.is_valid_keycode("KC_LSFT"))
         self.assertEqual(cornix.to_legacy("KC_LSFT"), "KC_LSHIFT")
 
-    def test_nested_modifiers_and_mod_taps_are_accepted(self):
-        self.assertTrue(cornix.is_valid_keycode("LALT(LGUI(KC_PWR))"))
+    def test_modifier_chords_use_vial_s_combined_names(self):
+        # Vial writes a two-modifier chord as one wrapper and would rewrite a
+        # nested spelling on export, which would show up as phantom drift.
+        self.assertTrue(cornix.is_valid_keycode("LCG(KC_Q)"))
+        self.assertFalse(cornix.is_valid_keycode("LCTL(LGUI(KC_Q))"))
+
+    def test_mod_taps_are_accepted_but_only_over_basic_keys(self):
         self.assertTrue(cornix.is_valid_keycode("LSFT_T(KC_ESCAPE)"))
         self.assertFalse(cornix.is_valid_keycode("LSFT_T(MO(1))"))
 
@@ -216,11 +221,11 @@ class RenderTest(unittest.TestCase):
             with self.subTest(keycode=value):
                 self.assertLessEqual(len(render.label(value)), render.CELL)
 
-    def test_sleep_is_a_system_key_not_the_ergodox_chord(self):
-        # Vial's keycode table has no name for HID 0x66, so the Alt+Gui+Power
-        # chord cannot be expressed; System Sleep replaces it.  See adr/0007.
-        self.assertEqual(cornix.layer_to_matrix(keymap.BASE_LAYER)[5][6], "KC_SLEP")
-        self.assertFalse(cornix.is_valid_keycode("KC_POWER"))
+    def test_right_encoder_locks_the_screen(self):
+        # Ctrl+Cmd+Q is the macOS lock-screen shortcut.  Not KC_SLEP, and not
+        # the ErgoDox's sleep chord; see adr/0007.
+        self.assertEqual(cornix.layer_to_matrix(keymap.BASE_LAYER)[5][6], "LCG(KC_Q)")
+        self.assertEqual(cornix.atoms("LCG(KC_Q)"), {"KC_LCTRL", "KC_LGUI", "KC_Q"})
 
     def test_diff_reports_a_changed_slot(self):
         document = build_document()

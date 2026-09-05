@@ -168,9 +168,19 @@ firmware is ignoring it.
 *left* and *right* Command separately, the two outer bottom keys *left* and *right*
 Option, and the left home-row pinky *left Control* rather than Caps Lock.
 
-**Careful with two keys.** `[5][6]` on the base layer sleeps the machine. `[3][0]`
-on MDIA enters the bootloader; recovering from that means double-tapping the reset
-button and reflashing.
+**Encoder pushes.** `[5][6]` on the base layer locks the screen (Ctrl+Cmd+Q) and
+`[2][6]` sends Option+Space. If one does nothing, try the other: if both are dead
+the problem is the encoder slot rather than the keycode, which the Matrix Tester
+will confirm.
+
+**Careful with one key.** `[3][0]` on MDIA enters the bootloader; recovering from
+that means double-tapping the reset button and reflashing.
+
+**On spelling.** A modifier chord is written with Vial's combined name —
+`LCG(KC_Q)`, not `LCTL(LGUI(KC_Q))` — because that is what Vial writes on export,
+and anything else shows up as phantom drift in `make import`. The generator rejects
+the nested form. [ADR 7](adr/0007-inner-column-moves-to-the-encoder-pushes.md) has
+the details, including why the key is not `KC_SLEP`.
 
 ## Repository layout
 
