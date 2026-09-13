@@ -6,8 +6,16 @@
       "Bash(make test)",
       "Bash(make check)",
       "Bash(make all)",
-      "Bash(git status)",
+      "Bash(make import:*)",
+      "Bash(python3 gen_vil.py --check)",
+      "Bash(git status:*)",
       "Bash(git diff:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(git merge:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr merge:*)"
     ],
     "deny": [
       "Edit(/build/**)",

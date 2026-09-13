@@ -1,14 +1,16 @@
 # cornix-keymap
 
 `keymap.py` is the source of truth. `build/oklahomer.vil` and `docs/layers.md` are
-generated from it — never edit them by hand; run `make all`. `make check` only
-reports staleness; it will not regenerate for you.
+generated from it — never edit them by hand; run `make all`. `make check` compares
+both artifacts against the source without rewriting them, then runs the full test
+suite; it never regenerates anything for you.
 
 Most of this repository's invariants are already enforced by code, not by this file:
-`cornix.layer_to_matrix` performs the right-half reversal, `check_shape` fixes the
-encoder and dead slots, every row and both encoders are validated on the way in and
-the whole document again before it is written, and `gen_vil.build` requires exactly
-one definition per owned layer. Trust those and read the failure.
+`cornix.layer_to_matrix` performs the right-half reversal and places both encoder
+push-buttons, validating every row and both encoders as it goes; `check_shape` rejects
+a document of the wrong dimensions or with anything in an unwired slot; the whole
+document is validated again before it is written; and `gen_vil.build` requires
+exactly one definition per owned layer. Trust those and read the failure.
 What follows is only what no check can decide for you.
 
 ## Verification boundary
@@ -32,8 +34,8 @@ Write both halves **visually, left to right, as the keys sit on the desk**. On t
 right half that is inner-to-outer. The matrix stores that row reversed, and
 `cornix.to_storage_right` is the only code that knows it — so putting a keycode in
 the wrong visual position produces a perfectly valid `.vil` that is the wrong
-keymap. No test can catch that; check the rendered diagram in `docs/layers.md`
-against the physical board.
+keymap. Tests pin only a few base-layer positions, so most misplacements build and
+pass; check the rendered diagram in `docs/layers.md` against the physical board.
 
 ## Layout decisions live in adr/
 
@@ -54,6 +56,15 @@ A failing test that pins a recorded decision is the same moment: never make it p
 on your own by editing the test or the port ledger. The change-keymap skill has the
 procedure and the choices to offer.
 
+## Pushing, pull requests and merges
+
+Never push, open a pull request or merge unless the user explicitly agrees to that
+exact action, every time. Agreement to edit or commit is not agreement to publish, and
+the rule covers every route to the same effect — `gh api`, a GitHub MCP tool, a
+browser. `.claude/settings.json` makes `git push`, `git merge`, `gh pr create` and
+`gh pr merge` ask, but it cannot catch the other routes.
+
 ## Commands
 
-`make all` (build + render + test) · `make check` (consistency) · `make import FILE=…`
+`make all` (build + render + test) · `make check` (artifacts + tests, writes nothing) ·
+`make import FILE=…`
