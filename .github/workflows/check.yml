@@ -1,0 +1,18 @@
+# The pre-commit hook runs the same target, but it lives in .git/hooks -- it is
+# not cloned, and it inspects the working tree rather than the snapshot being
+# committed.  This job is the copy that runs on what actually landed.
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: make check

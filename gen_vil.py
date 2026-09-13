@@ -26,10 +26,18 @@ OUTPUT = os.path.join(HERE, "build", "oklahomer.vil")
 
 def build(template: dict) -> dict:
     """Return a new ``.vil`` document: the template with our layers merged in."""
+    # Exactly one definition per owned layer.  A duplicate index would lose a
+    # layer to the dict below and a missing one would be backfilled from the
+    # vendor template -- both emit a well-formed .vil that is not the keymap
+    # the source describes.
+    indices = tuple(layer.index for layer in keymap.LAYERS)
+    if sorted(indices) != sorted(cornix.OWNED_LAYERS):
+        raise ValueError(
+            f"keymap.py must define each of {tuple(cornix.OWNED_LAYERS)} exactly once; "
+            f"got {indices}"
+        )
+
     owned = {layer.index: cornix.layer_to_matrix(layer) for layer in keymap.LAYERS}
-    unknown = set(owned) - set(cornix.OWNED_LAYERS)
-    if unknown:
-        raise ValueError(f"keymap.py defines layers outside OWNED_LAYERS: {sorted(unknown)}")
 
     layout = [
         owned.get(index, template["layout"][index])
@@ -69,8 +77,13 @@ def main(argv: list[str] | None = None) -> int:
     document = build(template)
 
     if args.check:
-        existing = cornix.load_vil(args.output)
-        if existing != document:
+        try:
+            existing = cornix.load_vil(args.output)
+        except OSError as error:
+            print(f"cannot read {args.output}: {error.strerror}; run 'make build'",
+                  file=sys.stderr)
+            return 1
+        if cornix.canonical(existing) != cornix.canonical(document):
             print(f"{args.output} is stale; run 'make build'", file=sys.stderr)
             return 1
         print(f"{args.output} is up to date")

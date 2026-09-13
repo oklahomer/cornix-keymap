@@ -6,8 +6,13 @@ Standard library only, no virtualenv needed.
 
 from __future__ import annotations
 
+import contextlib
+import hashlib
+import io
 import os
+import tempfile
 import unittest
+from unittest import mock
 
 import cornix
 import gen_vil
@@ -17,6 +22,7 @@ import render
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEMPLATE = os.path.join(HERE, "vendor", "cornix-default-keymap.vil")
 ARTIFACT = os.path.join(HERE, "build", "oklahomer.vil")
+DOCS = os.path.join(HERE, "docs", "layers.md")
 
 
 def build_document() -> dict:
@@ -207,11 +213,46 @@ class SettingsTest(unittest.TestCase):
         self.assertEqual(settings["7"], 200, "tapping term matches the ErgoDox")
 
 
+class DocumentComparisonTest(unittest.TestCase):
+    """``==`` between two loaded ``.vil`` documents is not strict enough.
+
+    JSON's ``true`` loads as ``True``, and in Python ``True == 1``.  A settings
+    value flipped from ``1`` to ``true`` therefore compares equal to what the
+    generator produces, so every staleness check calls the artifact fresh --
+    while Vial and the firmware read the file as written.  ``cornix.canonical``
+    compares the serialised form instead, where the two are plainly different.
+    """
+
+    def test_python_equality_confuses_true_and_one(self):
+        # The reason canonical() has to exist.  If this ever stops holding,
+        # canonical() can go with it.
+        self.assertEqual({"23": True}, {"23": 1})
+
+    def test_canonical_form_keeps_them_apart(self):
+        self.assertNotEqual(cornix.canonical({"23": True}), cornix.canonical({"23": 1}))
+
+    def test_canonical_form_ignores_key_order(self):
+        self.assertEqual(cornix.canonical({"a": 1, "b": 2}),
+                         cornix.canonical({"b": 2, "a": 1}))
+
+    def test_check_rejects_an_artifact_whose_settings_type_changed(self):
+        document = build_document()
+        self.assertEqual(document["settings"]["23"], 1, "guard: adr/0004 expects 1")
+        flipped = {**document, "settings": {**document["settings"], "23": True}}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "oklahomer.vil")
+            cornix.dump_vil(flipped, path)
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(gen_vil.main(["--output", path, "--check"]), 1)
+
+
 class ArtifactTest(unittest.TestCase):
     def test_committed_artifact_matches_the_source(self):
         if not os.path.exists(ARTIFACT):
             self.skipTest("build/oklahomer.vil has not been generated yet")
-        self.assertEqual(cornix.load_vil(ARTIFACT), build_document(),
+        self.assertEqual(cornix.canonical(cornix.load_vil(ARTIFACT)),
+                         cornix.canonical(build_document()),
                          "build/oklahomer.vil is stale; run 'make build'")
 
 
@@ -236,6 +277,106 @@ class RenderTest(unittest.TestCase):
     def test_diff_of_a_document_with_itself_is_empty(self):
         document = build_document()
         self.assertEqual(render.diff(document, document), [])
+
+
+class VendorTemplateTest(unittest.TestCase):
+    """The template is both the generator's input and this suite's oracle.
+
+    ``VendorPreservationTest`` compares the generated document against this
+    file, so a modified template would make every preservation test agree with
+    the corruption.  Pin the bytes instead.  A firmware update that changes the
+    factory export replaces the file and this digest in the same commit, and
+    says why in the message; adr/0010 explains what the contents are worth.
+    """
+
+    EXPECTED_SHA256 = "f85dd13d58398ea53e29f3fbab88d07b1f86ba09982e7eaac5d36eb314a327ab"
+
+    def test_template_is_the_recorded_factory_export(self):
+        with open(TEMPLATE, "rb") as handle:
+            digest = hashlib.sha256(handle.read()).hexdigest()
+        self.assertEqual(digest, self.EXPECTED_SHA256,
+                         "vendor/cornix-default-keymap.vil changed; it is a pristine "
+                         "factory export -- see adr/0010 before refreshing the digest")
+
+
+class LayerOwnershipTest(unittest.TestCase):
+    """``build`` must be handed exactly one definition per owned layer.
+
+    A duplicate index silently loses a layer when the dict is built, and a
+    missing one is silently backfilled from the vendor template.  Both produce
+    a well-formed .vil that is not the keymap the source describes -- the worst
+    kind of failure for a file that is flashed to hardware.
+    """
+
+    def setUp(self):
+        self.template = cornix.load_vil(TEMPLATE)
+
+    def test_rejects_a_duplicate_layer_index(self):
+        clash = keymap.SYMB_LAYER._replace(index=keymap.BASE)
+        with mock.patch.object(keymap, "LAYERS",
+                               (keymap.BASE_LAYER, clash, keymap.MDIA_LAYER)):
+            with self.assertRaises(ValueError):
+                gen_vil.build(self.template)
+
+    def test_rejects_a_missing_owned_layer(self):
+        with mock.patch.object(keymap, "LAYERS",
+                               (keymap.BASE_LAYER, keymap.SYMB_LAYER)):
+            with self.assertRaises(ValueError):
+                gen_vil.build(self.template)
+
+    def test_rejects_a_layer_outside_the_owned_range(self):
+        stray = keymap.MDIA_LAYER._replace(index=5)
+        with mock.patch.object(keymap, "LAYERS",
+                               (keymap.BASE_LAYER, keymap.SYMB_LAYER, stray)):
+            with self.assertRaises(ValueError):
+                gen_vil.build(self.template)
+
+    def test_accepts_the_real_keymap(self):
+        gen_vil.build(self.template)
+
+
+class DocsFreshnessTest(unittest.TestCase):
+    """``render.py --check-output`` reports staleness without rewriting.
+
+    ``make check`` used to regenerate docs/layers.md and then diff the result
+    against the git index.  That destroyed a hand edit rather than reporting it,
+    and it failed for an uncommitted-but-correct source change -- staleness and
+    dirtiness are not the same question.
+    """
+
+    def setUp(self):
+        if not os.path.exists(ARTIFACT):
+            self.skipTest("build/oklahomer.vil has not been generated yet")
+
+    def check(self, path: str) -> int:
+        with contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()):
+            return render.main([ARTIFACT, "--check-output", path])
+
+    def test_accepts_the_committed_docs(self):
+        if not os.path.exists(DOCS):
+            self.skipTest("docs/layers.md has not been generated yet")
+        self.assertEqual(self.check(DOCS), 0)
+
+    def test_reports_a_stale_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            stale = os.path.join(tmp, "layers.md")
+            with open(stale, "w", encoding="utf-8") as handle:
+                handle.write("not the rendered layout\n")
+            self.assertEqual(self.check(stale), 1)
+
+    def test_reports_a_missing_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(self.check(os.path.join(tmp, "absent.md")), 1)
+
+    def test_leaves_the_file_it_checks_untouched(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            stale = os.path.join(tmp, "layers.md")
+            with open(stale, "w", encoding="utf-8") as handle:
+                handle.write("not the rendered layout\n")
+            self.check(stale)
+            with open(stale, encoding="utf-8") as handle:
+                self.assertEqual(handle.read(), "not the rendered layout\n")
 
 
 if __name__ == "__main__":

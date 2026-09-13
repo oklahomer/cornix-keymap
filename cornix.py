@@ -302,6 +302,21 @@ def load_vil(path: str) -> dict[str, Any]:
         return json.load(handle)
 
 
+def canonical(document: Any) -> str:
+    """A comparable form of a loaded ``.vil`` that preserves JSON types.
+
+    ``==`` between two loaded documents is not strict enough.  JSON's ``true``
+    loads as ``True`` and Python says ``True == 1``, so a settings value flipped
+    from ``1`` to ``true`` compares equal to what the generator produces and the
+    artifact looks fresh -- while Vial and the firmware read the file as
+    written.  Serialising first makes the two plainly different.
+
+    ``sort_keys`` so that key order is not mistaken for a change, and
+    ``indent=1`` so a failed comparison prints a readable line diff.
+    """
+    return json.dumps(document, ensure_ascii=False, sort_keys=True, indent=1)
+
+
 def dump_vil(data: dict[str, Any], path: str, indent: int | None = 1) -> None:
     """Write a ``.vil`` file.
 
