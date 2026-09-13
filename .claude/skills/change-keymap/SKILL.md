@@ -10,10 +10,12 @@ If this skill was invoked with arguments, they are the request: $ARGUMENTS
 Otherwise the request is in the conversation. Run every command below from the
 repository root.
 
-`keymap.py` is the only file edited by hand (adr/0002). `build/oklahomer.vil` and
-`docs/layers.md` follow from it through `make`, and `adr/` records why things are
-where they are. A change is finished when all three agree — and only part of that
-can be proved mechanically:
+`keymap.py` is the only hand-edited source of the layers and settings (adr/0002).
+`build/oklahomer.vil` and `docs/layers.md` follow from it and change only through
+`make`, and `adr/` records why things are where they are. ADRs, README.md, and any
+test or ledger entry the user agrees to, are edited by hand as the steps describe. A
+change is finished when all of them agree — and only part of that can be proved
+mechanically:
 
 | What must hold | What proves it |
 | --- | --- |
@@ -33,15 +35,22 @@ and never name the ADR: moving right GUI onto the left side breaks adr/0008 and
 surfaces as a port-ledger failure and a reversal failure, neither of which mentions
 adr/0008.
 
-Before editing, the user is asked at most twice: in step 2, only if the target slot
-cannot be determined, and in step 4, with one plan that settles everything else.
+Apart from stopping on a problem, the user is asked at most twice before editing: in
+step 2, only if the target slot cannot be determined, and in step 4, with one plan
+that settles everything else.
 
 ## Steps
 
-1. **Start from a consistent tree.** Run `make check`. A failure is either a stale
-   artifact (`… is stale; run 'make build'`, or `… run 'make render'`) or a failing
-   test; either way stop and report, and do not build a change on top of it. Note any
-   uncommitted changes in `git status` that are not yours.
+1. **Start from a clean, consistent tree.**
+
+   - Run `git status --short` and read `git diff` for anything already uncommitted. If
+     those changes touch a file this request will edit or regenerate — `keymap.py`,
+     `build/`, `docs/`, README.md, `adr/`, `tests/` — stop and ask the user how to keep
+     them apart. Never overwrite, stage or commit changes you did not make without
+     their agreement.
+   - Run `make check`. A failure is either a stale artifact (`… is stale; run 'make
+     build'`, or `… run 'make render'`) or a failing test; either way stop and report,
+     and do not build a change on top of it.
 
 2. **Pin the request down physically.**
 
@@ -96,25 +105,44 @@ cannot be determined, and in step 4, with one plan that settles everything else.
      code change.
    - **The port ledger.** List every keycode the change adds, and every keycode it
      removes whose last use in layers 0-2 this is (check the matrix tables in
-     `docs/layers.md`). Then see how the ledger records them. This builds the same set
-     `test_nothing_was_invented_without_being_recorded` does:
+     `docs/layers.md`). Then ask the ledger what each one is, replacing `KEYCODE...`
+     with them:
 
      ```
-     python3 - KC_UP KC_RGUI <<'PY'
+     python3 - KEYCODE... <<'PY'
      import sys
      import keymap as k
 
      L = k.ERGODOX_DISPOSITION
-     recorded = set(L) | {d for v, d in L.values() if v in (k.WRAPPED, k.REPLACED)}
-     recorded |= {"USER00", "USER01", "USER02"}  # listed inside the test itself
+     new_to_cornix = {"USER00", "USER01", "USER02"}  # listed inside the test itself
      for code in sys.argv[1:]:
-         print(f"{code}: {'recorded' if code in recorded else 'NOT recorded'} {L.get(code, '')}")
+         roles = []
+         if code in L:
+             roles.append(f"ledger key, verdict {L[code][0]!r}")
+         roles += [f"destination of {src} ({v})" for src, (v, d) in L.items()
+                   if v in (k.WRAPPED, k.REPLACED) and d == code]
+         if code in new_to_cornix:
+             roles.append("new to the Cornix, listed in the test")
+         print(f"{code}: {'; '.join(roles) or 'NOT recorded'}")
      PY
      ```
 
-     An added keycode that is `NOT recorded` will fail
-     `test_nothing_was_invented_without_being_recorded`; a removed keycode recorded as
-     `kept` will fail `test_every_ergodox_key_is_accounted_for`.
+     Then predict:
+     - an added keycode that is `NOT recorded` fails
+       `test_nothing_was_invented_without_being_recorded`;
+     - an added keycode that is a ledger key with verdict `wrapped`, `replaced` or
+       `dropped` fails `test_every_ergodox_key_is_accounted_for`, because the ledger
+       says it must not appear;
+     - a removed keycode that is a ledger key with verdict `kept`, or the destination of
+       a `wrapped` or `replaced` entry, fails `test_every_ergodox_key_is_accounted_for`.
+       The failure names the ledger key, not the keycode you removed: removing
+       `LCG(KC_Q)` reports `keycode='LALT(LGUI(KC_POWER))', verdict='replaced'`;
+     - a removed `USER00`-`USER02` fails
+       `VendorPreservationTest.test_vendor_custom_keycodes_survive` (adr/0010).
+   - **A QMK setting** must use an id the firmware exposes:
+     `python3 -c 'import cornix; print(sorted(cornix.load_vil("vendor/cornix-default-keymap.vil")["settings"], key=int))'`.
+     An id that is not listed is out of scope — a firmware question, not a keymap
+     change; stop and say so.
    - **Pinned positions and values.** List them with
      `grep -nE '\[[0-9]\]\[[0-9]\], "|settings\["[0-9]+"\]' tests/test_keymap.py`, and
      ignore the `layer0[…]` lines, which check the vendor template rather than
@@ -123,7 +151,8 @@ cannot be determined, and in step 4, with one plan that settles everything else.
      plan can say what in it will change.
    - **Present the plan and wait for agreement** when any of these apply: the target
      slot is not empty; the keycode already appears elsewhere on the layer; an ADR is
-     contradicted or made stale; a QMK setting changes; a test is predicted to fail.
+     contradicted or made stale; a QMK setting changes; a test is predicted to fail;
+     README.md has to change.
      The plan lists:
      - each slot as `[row][col]` before → after, and what is lost if it was occupied;
      - each ADR finding from step 3, and the edit you propose;
@@ -132,7 +161,8 @@ cannot be determined, and in step 4, with one plan that settles everything else.
        one you recommend and why, so that one answer from the user settles it.
    - When an ADR is contradicted, the choices are: drop the request, change the request
      so it fits, or change the decision (step 6). The user picks.
-   - Otherwise — one empty slot, no ADR involved, no predicted failure — go ahead.
+   - Otherwise — one empty slot, no ADR involved, no predicted failure, nothing in
+     README.md to change — go ahead.
 
 5. **Edit `keymap.py`.** For every layer touched, in the same edit:
 
@@ -179,13 +209,16 @@ cannot be determined, and in step 4, with one plan that settles everything else.
    | `KeycodeError: … unknown keycode '…'` — the build stops, only `keymap.py` changed | not in the vocabulary | fix the spelling, or back to step 4 |
    | `ValueError` about a row's length or the layer indices | the edit broke the structure | fix the edit |
    | `PortLedgerTest.test_nothing_was_invented_without_being_recorded` — `Items in the first set but not the second:`, then the keycode | an added keycode the ledger has never seen. The ledger records what became of the ErgoDox's keys and has no entry for a key new to the Cornix; the only such keys, `USER00`-`USER02`, are listed inside the test itself | (a) add the keycode to that set in the test, with a comment giving the reason — the existing precedent; (b) record it in `ERGODOX_DISPOSITION` as `REPLACED` from an ErgoDox key, only if it really takes over that key's job; (c) drop the new key |
-   | `PortLedgerTest.test_every_ergodox_key_is_accounted_for (keycode='…', verdict='kept')` | an ErgoDox key recorded as kept no longer appears | (a) change its verdict: `DROPPED` with a reason, or `REPLACED` with the new keycode; (b) keep the key somewhere else; (c) drop the request |
+   | `PortLedgerTest.test_every_ergodox_key_is_accounted_for (keycode='…', verdict='…')` — it names the ledger key, which may not be the keycode you touched | `kept`: that key no longer appears. `wrapped` or `replaced`: the recorded destination no longer appears, or the source key itself now appears. `dropped`: the dropped key appears again | (a) change the ledger entry — its verdict or its destination — with a reason; (b) keep what the entry requires, somewhere in layers 0-2; (c) drop the request |
    | `PortLedgerTest.test_the_dual_role_keys_are_where_the_ledger_says` | a dual-role key moved from `[3][4]` / `[7][4]` (adr/0004, adr/0006) | (a) change the decision: update the ADR (step 6) and the pinned expectation, in the same commit; (b) adjust or drop the request |
    | `SettingsTest.test_tap_hold_decision_is_event_based_not_time_based` | setting 7, 22, 23, 26 or 27 changed (adr/0004) | as the row above |
+   | `SettingsTest.test_we_only_set_ids_the_firmware_exposes` | `QMK_SETTINGS` has an id the vendor template does not | out of scope: take that setting back out and report |
    | `ReversalTest.test_outermost_right_keys_land_in_column_zero` | the right half was written in storage order, or a base key it pins moved: BkSp, Enter (adr/0008), RShift, RAlt (adr/0008, adr/0009), Y, RGui (adr/0006, adr/0008) | check the visual order first; if the move was intended, as the dual-role row |
    | `RenderTest.test_right_encoder_locks_the_screen` | the base right encoder push `[5][6]` changed (adr/0007) | as the dual-role row |
    | `RenderTest.test_labels_stay_within_the_cell_width` | a label is longer than six characters, which only a `SHORT` entry in `render.py` can produce | shorten the entry — a code change; tell the user |
-   | `VendorPreservationTest`, `VendorTemplateTest` | `vendor/` or layers 3-9 changed | revert; never intended |
+   | `VendorPreservationTest.test_vendor_custom_keycodes_survive` | a `USER00`-`USER02` key was removed from layers 0-2; they are the firmware's own controls (adr/0010) | (a) keep it somewhere else in layers 0-2; (b) change the decision: update adr/0010 and the test; (c) drop the request |
+   | `VendorPreservationTest.test_unowned_layers_are_untouched`, `test_every_other_top_level_field_is_untouched` | the generated document differs from the vendor template outside layers 0-2 and the settings — only a code change can do that, and this skill makes none | stop and report |
+   | `VendorTemplateTest.test_template_is_the_recorded_factory_export` | `vendor/cornix-default-keymap.vil` itself changed | stop and report; do not restore it yourself — the change may be the user's |
 
    ### When a test fails
 
@@ -223,16 +256,19 @@ cannot be determined, and in step 4, with one plan that settles everything else.
      or unclear, a `SHORT` entry in `render.py` fixes it — a code change; tell the user.
    - Compare the layer's `doc` diagram in `keymap.py` against that rendering: the same
      keys in the same places.
-   - README.md: make the changes the plan listed, and grep again for anything the plan
-     missed. Fix what is now wrong. Where a description is only incomplete —
-     "punctuation on the home row" once a symbol is added elsewhere — point it out and
-     let the user decide.
+   - README.md: make every change the plan listed, then grep again for the keycodes,
+     labels, positions and behaviour involved. Do not finish while anything in it is
+     false or leaves out what the change did — "punctuation on the home row" once a
+     symbol is added elsewhere.
 
-9. **Commit** once the user agrees. Never push without asking first, every time.
+9. **Commit** once the user agrees. Never push, open a pull request or merge without
+   asking first, every time.
 
    - Run `make check` yourself immediately before committing. The pre-commit hook that
      also runs it lives in `.git/hooks`, is not cloned (README.md, "Building") and may
      be missing; CI runs it again on push.
+   - Stage this change's files by name. Never `git add -A` or `git add .`, which sweep
+     in changes that are not yours.
    - **Commit 1** — the change itself: `keymap.py`, the regenerated
      `build/oklahomer.vil` and `docs/layers.md`, README.md updates describing the new
      layout, the ADR update or addition, and any test or ledger change the user chose.
@@ -245,8 +281,12 @@ cannot be determined, and in step 4, with one plan that settles everything else.
 
 ## Reporting back
 
-Whether or not anything was committed, end by reporting hardware verification as
-pending until the user comes back with a result, as CLAUDE.md requires:
+Only when the requested change is fully applied and the final `make check` passes —
+committed or not — report hardware verification as pending until the user comes back
+with a result, as CLAUDE.md requires. If the procedure stopped earlier, report what
+blocked it instead, and do not ask the user to load or export anything.
+
+For a finished change:
 
 - ask them to load `build/oklahomer.vil`, export it again and run
   `make import FILE=<export>`, which should print `no differences between …` (the
