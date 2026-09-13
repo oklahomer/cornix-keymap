@@ -53,8 +53,9 @@ literal (adr/0002).
    renderer or the tests, so a stale diagram passes `make all`. This step is the
    only thing keeping it true.
 
-   If the change reverses an accepted decision (CLAUDE.md, "Layout decisions live in
-   adr/"), ask the user before applying it.
+   If the change contradicts an accepted decision (CLAUDE.md, "Layout decisions live
+   in adr/"), ask the user before applying it. If they keep it, update that ADR as
+   step 6 of the change-keymap skill describes.
 
 5. **Settings.** `--emit` does not print settings, and `make all` rewrites the whole
    settings block from `keymap.QMK_SETTINGS`. A setting changed in Vial that is not
@@ -63,8 +64,8 @@ literal (adr/0002).
 
    Show the user each changed setting and confirm before copying it in. Settings 7,
    22, 23, 26 and 27 are the tap-hold decision recorded in adr/0004, and
-   `SettingsTest` pins them: changing one reverses that decision, so it needs a new
-   ADR, not just a new value and an edited test.
+   `SettingsTest` pins them: changing one changes that decision. If the user keeps
+   it, update adr/0004 and the pinned expectation in the test together.
 
 6. **Vendor-owned drift.** Do not apply it and do not drop it. It means the board or
    the vendor baseline differs from what this repository assumes, and those layers
@@ -72,6 +73,11 @@ literal (adr/0002).
    proceed.
 
 7. `make all`, then `make import FILE=<path>` again.
+
+   If `make all` fails, read the failure as step 7 of the change-keymap skill does,
+   and never make a test pass on your own. An imported key that is new to the Cornix
+   fails `PortLedgerTest` exactly as a hand-made one does; how to handle it is the
+   user's call.
 
    It should print `no differences between …` and exit 0: the repository now
    reproduces the export, which README.md calls the acceptance test. Any drift still reported is drift that was deliberately not

@@ -37,13 +37,22 @@ against the physical board.
 
 ## Layout decisions live in adr/
 
-The shape and vocabulary checks accept many changes that contradict an accepted
-decision: moving the function-key stack (adr/0005), moving a thumb key (adr/0006),
-or collapsing left and right modifiers into one (adr/0008) all pass.
+The tests catch some changes that contradict an accepted decision, but only by
+accident and never by naming the ADR: collapsing right GUI onto the left side
+(adr/0008) fails as a port-ledger and a reversal failure, neither of which mentions
+adr/0008. Moving a key passes every check unless it moves to or from one of the few
+positions a test happens to pin.
 
 Before changing where something lives, read the ADR that put it there. If the
-request reverses an accepted decision, do not just edit the literal — add a new ADR
-saying what it supersedes and update `adr/README.md`.
+request contradicts an accepted decision, do not just edit the literal: tell the user
+and let them decide. If they change the decision, update the existing ADR in place so
+it describes the decision as it now stands — do not mark it superseded or add a
+replacement. Add a new ADR only for a decision no existing one covers, and fix
+anything left contradicting the updated ADR in a separate commit.
+
+A failing test that pins a recorded decision is the same moment: never make it pass
+on your own by editing the test or the port ledger. The change-keymap skill has the
+procedure and the choices to offer.
 
 ## Commands
 
