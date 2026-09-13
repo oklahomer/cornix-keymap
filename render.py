@@ -285,7 +285,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.check_output:
         # Compare, never rewrite.  Regenerating first and diffing afterwards
         # destroys the evidence: a hand edit disappears instead of being
-        # reported.  See adr/0011.
+        # reported.
         try:
             with open(args.check_output, encoding="utf-8") as handle:
                 existing = handle.read()

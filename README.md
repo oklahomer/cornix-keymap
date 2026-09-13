@@ -74,7 +74,7 @@ the board, it becomes a dead key.
 `make check` compares the committed artifacts against what the current source
 produces. It does not regenerate them first and it does not ask git, so it reports a
 hand-edited artifact instead of quietly overwriting it, and it stays quiet about
-changes you simply have not committed yet. See [adr/0011](adr/0011-verification-compares-it-does-not-regenerate.md).
+changes you simply have not committed yet.
 
 It runs in two places. `.github/workflows/check.yml` runs it on what actually landed.
 It is also installed as a pre-commit hook, which is faster but weaker — the hook

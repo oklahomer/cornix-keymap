@@ -20,7 +20,7 @@ test:				## run the test suite
 # Compares the committed artifacts against what the current source produces.
 # It writes nothing: regenerating first and diffing afterwards would destroy a
 # hand edit instead of reporting it, and asking git would confuse "stale" with
-# "uncommitted".  See adr/0011.
+# "uncommitted".
 check:				## fail if the committed artifacts are stale (writes nothing)
 	$(PYTHON) gen_vil.py --check
 	$(PYTHON) render.py $(ARTIFACT) --check-output docs/layers.md

@@ -213,11 +213,46 @@ class SettingsTest(unittest.TestCase):
         self.assertEqual(settings["7"], 200, "tapping term matches the ErgoDox")
 
 
+class DocumentComparisonTest(unittest.TestCase):
+    """``==`` between two loaded ``.vil`` documents is not strict enough.
+
+    JSON's ``true`` loads as ``True``, and in Python ``True == 1``.  A settings
+    value flipped from ``1`` to ``true`` therefore compares equal to what the
+    generator produces, so every staleness check calls the artifact fresh --
+    while Vial and the firmware read the file as written.  ``cornix.canonical``
+    compares the serialised form instead, where the two are plainly different.
+    """
+
+    def test_python_equality_confuses_true_and_one(self):
+        # The reason canonical() has to exist.  If this ever stops holding,
+        # canonical() can go with it.
+        self.assertEqual({"23": True}, {"23": 1})
+
+    def test_canonical_form_keeps_them_apart(self):
+        self.assertNotEqual(cornix.canonical({"23": True}), cornix.canonical({"23": 1}))
+
+    def test_canonical_form_ignores_key_order(self):
+        self.assertEqual(cornix.canonical({"a": 1, "b": 2}),
+                         cornix.canonical({"b": 2, "a": 1}))
+
+    def test_check_rejects_an_artifact_whose_settings_type_changed(self):
+        document = build_document()
+        self.assertEqual(document["settings"]["23"], 1, "guard: adr/0004 expects 1")
+        flipped = {**document, "settings": {**document["settings"], "23": True}}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "oklahomer.vil")
+            cornix.dump_vil(flipped, path)
+            with contextlib.redirect_stdout(io.StringIO()), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(gen_vil.main(["--output", path, "--check"]), 1)
+
+
 class ArtifactTest(unittest.TestCase):
     def test_committed_artifact_matches_the_source(self):
         if not os.path.exists(ARTIFACT):
             self.skipTest("build/oklahomer.vil has not been generated yet")
-        self.assertEqual(cornix.load_vil(ARTIFACT), build_document(),
+        self.assertEqual(cornix.canonical(cornix.load_vil(ARTIFACT)),
+                         cornix.canonical(build_document()),
                          "build/oklahomer.vil is stale; run 'make build'")
 
 
@@ -249,8 +284,9 @@ class VendorTemplateTest(unittest.TestCase):
 
     ``VendorPreservationTest`` compares the generated document against this
     file, so a modified template would make every preservation test agree with
-    the corruption.  Pin the bytes instead.  A deliberate vendor refresh must
-    update the digest and record why in an ADR; see adr/0010.
+    the corruption.  Pin the bytes instead.  A firmware update that changes the
+    factory export replaces the file and this digest in the same commit, and
+    says why in the message; adr/0010 explains what the contents are worth.
     """
 
     EXPECTED_SHA256 = "f85dd13d58398ea53e29f3fbab88d07b1f86ba09982e7eaac5d36eb314a327ab"
@@ -259,7 +295,8 @@ class VendorTemplateTest(unittest.TestCase):
         with open(TEMPLATE, "rb") as handle:
             digest = hashlib.sha256(handle.read()).hexdigest()
         self.assertEqual(digest, self.EXPECTED_SHA256,
-                         "vendor/cornix-default-keymap.vil changed; see adr/0010")
+                         "vendor/cornix-default-keymap.vil changed; it is a pristine "
+                         "factory export -- see adr/0010 before refreshing the digest")
 
 
 class LayerOwnershipTest(unittest.TestCase):

@@ -83,7 +83,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"cannot read {args.output}: {error.strerror}; run 'make build'",
                   file=sys.stderr)
             return 1
-        if existing != document:
+        if cornix.canonical(existing) != cornix.canonical(document):
             print(f"{args.output} is stale; run 'make build'", file=sys.stderr)
             return 1
         print(f"{args.output} is up to date")
