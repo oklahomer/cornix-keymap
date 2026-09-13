@@ -278,6 +278,39 @@ class RenderTest(unittest.TestCase):
         document = build_document()
         self.assertEqual(render.diff(document, document), [])
 
+    # render.diff is what `make import` runs, and README.md calls a clean import
+    # the acceptance test.  Comparing loaded JSON with == hides changes Vial and
+    # the firmware do see: in Python true == 1, false == 0 and -1 == -1.0.
+
+    def test_diff_reports_a_setting_whose_type_changed(self):
+        document = build_document()
+        flipped = {**document, "settings": {**document["settings"], "23": True}}
+        self.assertEqual(render.diff(document, flipped),
+                         ["setting 23 (Hold On Other Key Press): 1 -> true"])
+
+    def test_diff_reports_a_top_level_field_whose_type_changed(self):
+        document = build_document()
+        self.assertEqual(document["layout_options"], 0, "guard: the vendor export says 0")
+        flipped = {**document, "layout_options": False}
+        self.assertEqual(render.diff(document, flipped),
+                         ["field layout_options: 0 -> false"])
+
+    def test_diff_reports_a_slot_whose_type_changed(self):
+        document = build_document()
+        layout = [[list(row) for row in layer] for layer in document["layout"]]
+        self.assertEqual(layout[1][0][6], cornix.UNUSED, "guard: [0][6] is a dead slot")
+        layout[1][0][6] = float(cornix.UNUSED)
+        report = render.diff(document, {**document, "layout": layout})
+        self.assertEqual(len(report), 1, report)
+        self.assertIn("layer 1 [0][6]", report[0])
+
+    def test_emitted_literals_cover_every_layer_the_diff_reports(self):
+        document = build_document()
+        layout = [[list(row) for row in layer] for layer in document["layout"]]
+        layout[1][0][6] = float(cornix.UNUSED)
+        literals = render.visual_literals(document, {**document, "layout": layout})
+        self.assertIn("# layer 1, as written in keymap.py (visual order)", literals)
+
 
 class VendorTemplateTest(unittest.TestCase):
     """The template is both the generator's input and this suite's oracle.
