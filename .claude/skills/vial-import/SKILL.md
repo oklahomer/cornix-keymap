@@ -7,16 +7,26 @@ description: Take a .vil exported from the Vial GUI and fold its changes back in
 
 An edit made in the Vial GUI lands on the board and nowhere else, so it is a
 proposal (README.md, "The board is not the source of truth"). `make import` reports
-the drift and prints the changed layer 0-2 rows as `keymap.py` literals. Applying
-them is manual on purpose: the diagram and the reasoning have to move with the
-literal (adr/0002).
+the drift and prints the rows of every changed layer 0-2 as `keymap.py` literals.
+Applying them is manual on purpose: the diagram and the reasoning have to move with
+the literal (adr/0002).
+
+This skill covers what is particular to an import: reading the report, sorting the
+drift by owner, and choosing which differences to adopt. Carrying an adopted
+difference into `keymap.py`, the ADRs, README.md and the tests works exactly as for a
+change the user asks for, and the change-keymap skill governs it.
 
 ## Steps
 
-1. `python3 gen_vil.py --check`
+1. **Start from a clean, consistent tree.**
 
-   Stop if the committed artifact is stale. Comparing an export against an
-   out-of-date baseline produces drift that is not real.
+   - Run `git status --short` and read `git diff`. If uncommitted changes touch
+     `keymap.py`, `build/`, `docs/`, README.md, `adr/` or `tests/`, stop and ask the
+     user how to keep them apart. Never overwrite, stage or commit changes you did not
+     make without their agreement.
+   - Run `python3 gen_vil.py --check`, and stop if the committed artifact is stale:
+     comparing an export against an out-of-date baseline produces drift that is not
+     real.
 
 2. `make import FILE=<path>`
 
@@ -30,64 +40,68 @@ literal (adr/0002).
    | `N difference(s) between …`, then the report | drift found — **the expected case**; continue |
    | `usage: make import …`, a Python traceback, or anything else | the import did not run; fix the command or the file and retry |
 
-3. Sort the report by who owns what changed. `gen_vil.build` decides it: layers 0-2
-   and the settings block are written from `keymap.py`, and everything else is
+3. **Sort the report by who owns what changed.** `gen_vil.build` decides it: layers
+   0-2 and the settings block are written from `keymap.py`, and everything else is
    carried over from the vendor template.
 
-   | Drift in | Owned by | Go to |
-   | --- | --- | --- |
-   | layers 0-2, including the encoder push-buttons | `keymap.py` layers | step 4 |
-   | `setting …` lines | `keymap.QMK_SETTINGS` | step 5 |
-   | layers 3-9, `encoder_layout` (rotation), any other top-level field | vendor template | step 6 |
+   | Drift in | Owned by |
+   | --- | --- |
+   | `layer 0`-`layer 2` lines, encoder push-buttons included | `keymap.py` layers |
+   | `setting …` lines | `keymap.QMK_SETTINGS` |
+   | `layer 3`-`layer 9` lines, `encoder_layout differs`, `field …` lines | vendor template |
 
-4. **Layers 0-2.** For each changed layer, update three things in the same edit:
+   Vendor-owned drift is never adopted here. It means the board or the vendor baseline
+   differs from what this repository assumes, and those layers hold the firmware's own
+   controls (adr/0010): report it, and ask the user how to proceed.
 
-   - the literals: paste the emitted rows into `left_main`, `left_bottom`,
-     `left_encoder`, `right_main`, `right_bottom` and `right_encoder`. They come out
-     in visual order (inner-to-outer on the right half) and go in as printed;
-   - the layer's `doc` diagram, so it shows the new keys;
-   - the explanatory text and comments that describe the keys that moved, including
-     any ADR link.
+4. **Assess every owned difference before asking anything.** Read
+   `.claude/skills/change-keymap/SKILL.md` now; from here on it governs, with the
+   import-specific points below. Treat every `layer 0`-`layer 2` line and every
+   `setting …` line as a separate candidate, and run change-keymap's steps 3 and 4 over
+   all of them: the ADR classification, and the port-ledger, pinned-value, settings-id
+   and README checks. Its step 2 does not apply — the report names each slot exactly —
+   and its step 1 is step 1 here.
 
-   Nothing checks the diagram. `Layer.doc` is never read by the generator, the
-   renderer or the tests, so a stale diagram passes `make all`. This step is the
-   only thing keeping it true.
+   - Do not assume every difference is a GUI edit the user means to keep. An export
+     from a board that was not loaded from the current artifact carries old values
+     alongside the new edit, and adopting those would undo later changes.
+   - `--emit` does not print settings, and `make all` rewrites the whole settings block
+     from `keymap.QMK_SETTINGS`. A setting changed in Vial that is not copied into
+     `QMK_SETTINGS` is lost from the repository, and the next load of the regenerated
+     file reverts it on the board. Settings 7, 22, 23, 26 and 27 are the tap-hold
+     decision recorded in adr/0004; adopting a different value changes that decision.
 
-   If the change contradicts an accepted decision (CLAUDE.md, "Layout decisions live
-   in adr/"), ask the user before applying it. If they keep it, update that ADR as
-   step 6 of the change-keymap skill describes.
+5. **Ask once which differences to adopt, and how.** Skip this only when the user has
+   already said exactly which differences to take and nothing from step 4 needs their
+   decision. Otherwise send one message listing each candidate with what adopting it
+   involves — its ADR findings, any predicted test failure with its choices, any README
+   change — together with the vendor-owned drift from step 3. The user's answer is
+   change-keymap's agreed plan.
 
-5. **Settings.** `--emit` does not print settings, and `make all` rewrites the whole
-   settings block from `keymap.QMK_SETTINGS`. A setting changed in Vial that is not
-   copied into `QMK_SETTINGS` is lost from the repository, and loading the
-   regenerated file later reverts it on the board.
+6. **Apply what was adopted** with change-keymap's steps 5 to 8. Edit only the adopted
+   slots in the current literals. The emitted rows are reference: they show each slot
+   in visual order, inner to outer on the right half. Paste a whole emitted row only
+   when every differing slot in it has been adopted.
 
-   Show the user each changed setting and confirm before copying it in. Settings 7,
-   22, 23, 26 and 27 are the tap-hold decision recorded in adr/0004, and
-   `SettingsTest` pins them: changing one changes that decision. If the user keeps
-   it, update adr/0004 and the pinned expectation in the test together.
+7. **`make import FILE=<path>` again**, once `make check` passes.
 
-6. **Vendor-owned drift.** Do not apply it and do not drop it. It means the board or
-   the vendor baseline differs from what this repository assumes, and those layers
-   hold the firmware's own controls (adr/0010). Report it and ask the user how to
-   proceed.
+   - `no differences between …` and exit 0: the repository now reproduces the export,
+     which README.md calls the acceptance test.
+   - Any drift still reported must be exactly what was not adopted. Tell the user,
+     because loading the regenerated `build/oklahomer.vil` would change the board.
 
-7. `make all`, then `make import FILE=<path>` again.
-
-   If `make all` fails, read the failure as step 7 of the change-keymap skill does,
-   and never make a test pass on your own. An imported key that is new to the Cornix
-   fails `PortLedgerTest` exactly as a hand-made one does; how to handle it is the
-   user's call.
-
-   It should print `no differences between …` and exit 0: the repository now
-   reproduces the export, which README.md calls the acceptance test. Any drift still reported is drift that was deliberately not
-   adopted. Tell the user, because loading the regenerated `build/oklahomer.vil`
-   would change the board.
+8. **Commit** as change-keymap's step 9 describes.
 
 ## After importing
 
-When step 7 reports no differences the board already runs this layout, so there is
-nothing to reload. That is not the same as the keyboard behaving as intended: the
-GUI edit itself was never verified. As CLAUDE.md requires for every layout change,
+This replaces change-keymap's "Reporting back". If the procedure stopped before the
+adopted differences were applied and `make check` passed, report what blocked it and
+ask for nothing else.
+
+Otherwise, when step 7 reports no differences the board already runs this layout, so
+there is nothing to reload. That is not the same as the keyboard behaving as intended:
+the GUI edit itself was never verified. As CLAUDE.md requires for every layout change,
 report hardware verification — README.md, "Checking it on the hardware" — as pending
-until the user comes back with a result.
+until the user comes back with a result. If drift remains, the board and the
+repository now differ: say so, and let the user decide whether to load the regenerated
+file.
