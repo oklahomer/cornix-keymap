@@ -90,8 +90,9 @@ that settles everything else.
    | stale only if the decision changes | the ADR restates part of a decision that another ADR makes and this change contradicts | list it under the "change the decision" choice |
    | unrelated | — | — |
 
-   If you notice an ADR that is already wrong for a reason unrelated to this change,
-   tell the user separately. Do not fix it as part of the change.
+   If you notice anything in the repository that is already wrong for a reason
+   unrelated to this change — an ADR, README.md, a comment in `keymap.py` — tell the
+   user separately. Do not fix it as part of the change.
 
 4. **Work out everything the change affects, then present one plan.**
 
@@ -127,7 +128,9 @@ that settles everything else.
      PY
      ```
 
-     Then predict:
+     Then predict. An added keycode that is a ledger key with verdict `kept`, or new to
+     the Cornix, passes, and so does removing `KC_NO` or `KC_TRNS`, which stay in use
+     everywhere. Otherwise:
      - an added keycode that is `NOT recorded` fails
        `test_nothing_was_invented_without_being_recorded`;
      - an added keycode that is a ledger key with verdict `wrapped`, `replaced` or
@@ -144,11 +147,19 @@ that settles everything else.
      An id that is not listed is out of scope — a firmware question, not a keymap
      change; stop and say so.
    - **Pinned positions and values.** List them with
-     `grep -nE '\[[0-9]\]\[[0-9]\], "|settings\["[0-9]+"\]' tests/test_keymap.py`, and
-     ignore the `layer0[…]` lines, which check the vendor template rather than
-     `keymap.py`. A slot or setting of yours in that list fails its test.
-   - **README.md.** `grep -n` it for the keycodes, labels and positions involved, so the
-     plan can say what in it will change.
+     `grep -nE '\]\[[0-9]+\], |\["[0-9]+"\], ' tests/test_keymap.py`. Reading the hits:
+     `matrix[…]` and `layer_to_matrix(keymap.BASE_LAYER)[…]` pin the **base** layer of
+     `keymap.py`; `settings[…]` and `document["settings"][…]` pin a setting;
+     `layer0[…]` checks the vendor template and `layout[…][…][6]` a dead slot no edit
+     can reach, so ignore both. A slot or setting of yours in that list fails its test.
+     Setting 23 is also the worked example in
+     `test_diff_reports_a_setting_whose_type_changed`, whose expected report line
+     changes with it.
+   - **README.md.** Grep it for the keycodes, labels and positions involved, then read
+     the sections that describe the layout in prose — "The layers", "QMK Settings",
+     "Checking it on the hardware" — because a summary such as "punctuation on the home
+     row" names no keycode, and no grep finds it. The plan says what in README.md will
+     change.
    - **Present the plan and wait for agreement** when any of these apply: the target
      slot is not empty; the keycode already appears elsewhere on the layer; an ADR is
      contradicted or made stale; a QMK setting changes; a test is predicted to fail;
@@ -215,6 +226,7 @@ that settles everything else.
    | `SettingsTest.test_we_only_set_ids_the_firmware_exposes` | `QMK_SETTINGS` has an id the vendor template does not | out of scope: take that setting back out and report |
    | `ReversalTest.test_outermost_right_keys_land_in_column_zero` | the right half was written in storage order, or a base key it pins moved: BkSp, Enter (adr/0008), RShift, RAlt (adr/0008, adr/0009), Y, RGui (adr/0006, adr/0008) | check the visual order first; if the move was intended, as the dual-role row |
    | `RenderTest.test_right_encoder_locks_the_screen` | the base right encoder push `[5][6]` changed (adr/0007) | as the dual-role row |
+   | any assertion whose message starts `guard:` | a test's precondition about the current keymap no longer holds — `guard: adr/0004 expects 1` once setting 23 changes | the decision changed: as the dual-role row, updating the guard together with the ADR |
    | `RenderTest.test_labels_stay_within_the_cell_width` | a label is longer than six characters, which only a `SHORT` entry in `render.py` can produce | shorten the entry — a code change; tell the user |
    | `VendorPreservationTest.test_vendor_custom_keycodes_survive` | a `USER00`-`USER02` key was removed from layers 0-2; they are the firmware's own controls (adr/0010) | (a) keep it somewhere else in layers 0-2; (b) change the decision: update adr/0010 and the test; (c) drop the request |
    | `VendorPreservationTest.test_unowned_layers_are_untouched`, `test_every_other_top_level_field_is_untouched` | the generated document differs from the vendor template outside layers 0-2 and the settings — only a code change can do that, and this skill makes none | stop and report |
@@ -257,7 +269,7 @@ that settles everything else.
    - Compare the layer's `doc` diagram in `keymap.py` against that rendering: the same
      keys in the same places.
    - README.md: make every change the plan listed, then grep again for the keycodes,
-     labels, positions and behaviour involved. Do not finish while anything in it is
+     labels and positions involved and re-read the sections step 4 names. Do not finish while anything in it is
      false or leaves out what the change did — "punctuation on the home row" once a
      symbol is added elsewhere.
 
