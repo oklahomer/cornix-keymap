@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make build)",
+      "Bash(make render)",
+      "Bash(make test)",
+      "Bash(make check)",
+      "Bash(make all)",
+      "Bash(git status)",
+      "Bash(git diff:*)"
+    ],
+    "deny": [
+      "Edit(/build/**)",
+      "Edit(/docs/layers.md)",
+      "Edit(/vendor/**)"
+    ]
+  }
+}
