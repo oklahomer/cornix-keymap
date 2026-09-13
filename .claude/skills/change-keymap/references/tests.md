@@ -1,7 +1,8 @@
 # Tests: predicting failures, and reading them
 
 Reference for the change-keymap skill. Its step 4 uses the first section to predict
-failures before anything is edited; its step 7 uses the second when `make all` fails.
+failures before anything is edited, and the table in the second for the choices each
+predicted failure offers; its step 7 uses the second when `make all` fails.
 
 Several of these tests carry recorded decisions — the port ledger, the tap-hold
 settings of adr/0004, positions other ADRs fix — so a failure is a question for the
@@ -18,11 +19,18 @@ what each one is, replacing `KEYCODE...` with them:
 
 ```
 python3 - KEYCODE... <<'PY'
+import ast
+import pathlib
 import sys
 import keymap as k
 
 L = k.ERGODOX_DISPOSITION
-new_to_cornix = {"USER00", "USER01", "USER02"}  # listed inside the test itself
+# Keys new to the Cornix are the set literal inside the ledger test itself.
+tree = ast.parse(pathlib.Path("tests/test_keymap.py").read_text())
+test = next(n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)
+            and n.name == "test_nothing_was_invented_without_being_recorded")
+new_to_cornix = {e.value for n in ast.walk(test) if isinstance(n, ast.Set)
+                 for e in n.elts if isinstance(e, ast.Constant)}
 for code in sys.argv[1:]:
     roles = []
     if code in L:
@@ -64,7 +72,9 @@ the hits:
 
 A slot or setting of yours in that list fails its test. Setting 23 is also the worked
 example in `test_diff_reports_a_setting_whose_type_changed`, whose expected report
-line changes with it.
+line changes with it. The grep is a guide, not a complete list:
+`test_diff_reports_a_changed_slot` also expects base `[3][4]` to differ from the vendor
+template.
 
 ## Reading a failure
 
@@ -72,7 +82,7 @@ line changes with it.
 | --- | --- | --- |
 | `KeycodeError: … unknown keycode '…'` — the build stops, only `keymap.py` changed | not in the vocabulary | fix the spelling, or go back to change-keymap step 4 |
 | `ValueError` about a row's length or the layer indices | the edit broke the structure | fix the edit |
-| `PortLedgerTest.test_nothing_was_invented_without_being_recorded` — `Items in the first set but not the second:`, then the keycode | an added keycode the ledger has never seen. The ledger records what became of the ErgoDox's keys and has no entry for a key new to the Cornix; the only such keys, `USER00`-`USER02`, are listed inside the test itself | (a) add the keycode to that set in the test, with a comment giving the reason — the existing precedent; (b) record it in `ERGODOX_DISPOSITION` as `REPLACED` from an ErgoDox key, only if it really takes over that key's job; (c) drop the new key |
+| `PortLedgerTest.test_nothing_was_invented_without_being_recorded` — `Items in the first set but not the second:`, then the keycode | an added keycode the ledger has never seen. The ledger records what became of the ErgoDox's keys and has no entry for a key new to the Cornix; the only such keys, `USER00`-`USER02`, are listed inside the test itself | (a) add the keycode to that set in the test, with a comment giving the reason — the existing precedent, though so far only for the firmware's own keys, and every later key new to the Cornix will need the same edit, so say so; (b) record it in `ERGODOX_DISPOSITION` as `REPLACED` from an ErgoDox key, only if it really takes over that key's job; (c) drop the new key |
 | `PortLedgerTest.test_every_ergodox_key_is_accounted_for (keycode='…', verdict='…')` — it names the ledger key, which may not be the keycode you touched | `kept`: that key no longer appears. `wrapped` or `replaced`: the recorded destination no longer appears, or the source key itself now appears. `dropped`: the dropped key appears again | (a) change the ledger entry — its verdict or its destination — with a reason; (b) keep what the entry requires, somewhere in layers 0-2; (c) drop the request |
 | `PortLedgerTest.test_the_dual_role_keys_are_where_the_ledger_says` | a dual-role key moved from `[3][4]` / `[7][4]` (adr/0004, adr/0006) | (a) change the decision: update the ADR (change-keymap step 6) and the pinned expectation, in the same commit; (b) adjust or drop the request |
 | `SettingsTest.test_tap_hold_decision_is_event_based_not_time_based` | setting 7, 22, 23, 26 or 27 changed (adr/0004) | as the row above |

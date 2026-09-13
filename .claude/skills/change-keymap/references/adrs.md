@@ -14,16 +14,18 @@ Read every ADR in `adr/`, then give each one of these findings:
 | stale only if the decision changes | the ADR restates part of a decision that another ADR makes, and this change contradicts that other ADR | lists the edit under the "change the decision" choice only |
 | unrelated | — | — |
 
-Examples from dry runs of this skill:
+Patterns the dry runs of this skill turned up. They quote the ADRs as they read when
+this was written; always classify against the ADRs as they read now.
 
-- **Up on the empty base flat key `[3][1]`** contradicts nothing, but makes three ADRs
-  stale: adr/0006 lists that key as "(unused)" and calls it "the obvious place for
-  anything new"; adr/0007 gives "the empty flat bottom key on each half" as the
-  fallback for a board without encoders, which the left half would lose; and adr/0009
-  says the right key is empty "mirroring the empty key on the left half".
-- **Right GUI changed to Left GUI** contradicts adr/0008 ("never map one side's keycode
-  onto the other side's key"). adr/0006's table, which names `RGui` on the right arc, is
-  stale only if the user chooses to change adr/0008.
+- **Filling a key an ADR describes as empty.** An ADR that lists a slot as "(unused)",
+  calls it the place for anything new, says another key mirrors it, or names it as a
+  fallback is not contradicted when the slot is filled — but each such statement goes
+  stale, and a lost fallback is a real cost to name. adr/0006, adr/0007 and adr/0009
+  all say something of this kind about the empty flat bottom keys.
+- **Moving a key onto the other side.** Mapping one side's modifier onto the other
+  side's key contradicts adr/0008. An ADR whose table merely names the original key in
+  its place — adr/0006 names `RGui` on the right arc — is stale only if the user
+  chooses to change adr/0008.
 
 A Decision section can hold a table of current contents — adr/0006's arc order,
 adr/0007's per-layer encoder table. Changing a cell of that table is "makes a detail
@@ -34,8 +36,11 @@ breaks that rule.
 
 Only as the user agreed in the plan.
 
-- **An existing ADR covers the topic: update it in place.** Do not mark it superseded
-  and do not add a replacement ADR. Keep `Status: accepted` and rewrite the Decision
+- **A detail went stale** while the decision still holds: correct that cell or sentence
+  and nothing else. Leave the rule and the reasoning alone, and commit the correction
+  with the change itself (change-keymap, step 9).
+- **The decision changed, and an existing ADR covers it: update it in place.** Do not
+  mark it superseded and do not add a replacement ADR. Keep `Status: accepted` and rewrite the Decision
   and Consequences — and the Context, if the reasoning changed — so the file describes
   the decision as it now stands and argues for the old one nowhere. The old version
   lives in git history; the commit message says what changed and why.
@@ -44,7 +49,7 @@ Only as the user agreed in the plan.
   `Status: accepted`, then Context, Decision, Consequences), and a row in
   `adr/README.md`.
 
-Then find anything that now contradicts the updated ADR — other ADRs, README.md, text
+After a decision changes, find anything that now contradicts the updated ADR — other ADRs, README.md, text
 and comments in `keymap.py`, CLAUDE.md, these skills. A grep is where the search
 starts, not where it ends: look for the ADR's number, the keycodes and positions, and
 the words that describe the slot's state ("empty", "unused", "fallback", "mirror"),
