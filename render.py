@@ -252,6 +252,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="with --diff, print paste-ready keymap.py literals")
     parser.add_argument("--all-layers", action="store_true",
                         help="render every layer, not just the ones this repo owns")
+    parser.add_argument("--check-output", metavar="PATH",
+                        help="report whether PATH already holds this rendering "
+                             "instead of printing it; never writes")
     args = parser.parse_args(argv)
 
     document = cornix.load_vil(args.file)
@@ -277,7 +280,26 @@ def main(argv: list[str] | None = None) -> int:
     except Exception:  # rendering must work on any .vil, even without keymap.py
         names = {}
     layers = list(range(cornix.N_LAYERS)) if args.all_layers else list(cornix.OWNED_LAYERS)
-    print(render(document, names, layers))
+    text = render(document, names, layers) + "\n"
+
+    if args.check_output:
+        # Compare, never rewrite.  Regenerating first and diffing afterwards
+        # destroys the evidence: a hand edit disappears instead of being
+        # reported.  See adr/0011.
+        try:
+            with open(args.check_output, encoding="utf-8") as handle:
+                existing = handle.read()
+        except OSError as error:
+            print(f"cannot read {args.check_output}: {error.strerror}; run 'make render'",
+                  file=sys.stderr)
+            return 1
+        if existing != text:
+            print(f"{args.check_output} is stale; run 'make render'", file=sys.stderr)
+            return 1
+        print(f"{args.check_output} is up to date")
+        return 0
+
+    sys.stdout.write(text)
     return 0
 
 

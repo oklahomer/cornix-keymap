@@ -15,3 +15,5 @@ source and the README link to the ones that explain a particular choice.
 | [8](0008-keep-paired-modifiers-distinct.md) | Left and right modifiers stay separate physical keys |
 | [9](0009-drop-the-app-layer.md) | The application-launcher layer is removed |
 | [10](0010-preserve-vendor-keycodes-and-untouched-layers.md) | Generate from the vendor export, and keep what it contains |
+| [11](0011-verification-compares-it-does-not-regenerate.md) | Verification compares the artifacts, it does not regenerate them |
+| [12](0012-pin-the-vendor-template-by-digest.md) | Pin the vendor template by digest |

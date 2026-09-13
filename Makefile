@@ -17,10 +17,14 @@ render:				## build/oklahomer.vil -> docs/layers.md
 test:				## run the test suite
 	$(PYTHON) -m unittest discover -s tests -t .
 
-check: build render test		## fail if the committed artifacts are stale
-	@git diff --exit-code -- build docs \
-	  || (echo "ERROR: build/ or docs/ is stale -- commit the regenerated files"; exit 1)
-	@echo "artifacts are up to date"
+# Compares the committed artifacts against what the current source produces.
+# It writes nothing: regenerating first and diffing afterwards would destroy a
+# hand edit instead of reporting it, and asking git would confuse "stale" with
+# "uncommitted".  See adr/0011.
+check:				## fail if the committed artifacts are stale (writes nothing)
+	$(PYTHON) gen_vil.py --check
+	$(PYTHON) render.py $(ARTIFACT) --check-output docs/layers.md
+	$(MAKE) test
 
 # Compare a layout exported from the Vial GUI against the committed artifact.
 #   make import FILE=~/Downloads/whatever.vil

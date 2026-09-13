@@ -63,7 +63,7 @@ Standard-library Python 3. No dependencies, no virtualenv.
 make build     # keymap.py           -> build/oklahomer.vil
 make render    # build/oklahomer.vil -> docs/layers.md
 make test      # the test suite
-make check     # rebuild everything and fail if the committed files are stale
+make check     # fail if the committed files are stale; writes nothing
 make all       # build + render + test
 ```
 
@@ -71,9 +71,15 @@ make all       # build + render + test
 check matters more than it looks: an unparseable keycode does not raise an error on
 the board, it becomes a dead key.
 
-`make check` is also installed as a pre-commit hook, so a commit that changes
-`keymap.py` without regenerating `build/` and `docs/` is rejected. Set it up again
-after a fresh clone with:
+`make check` compares the committed artifacts against what the current source
+produces. It does not regenerate them first and it does not ask git, so it reports a
+hand-edited artifact instead of quietly overwriting it, and it stays quiet about
+changes you simply have not committed yet. See [adr/0011](adr/0011-verification-compares-it-does-not-regenerate.md).
+
+It runs in two places. `.github/workflows/check.yml` runs it on what actually landed.
+It is also installed as a pre-commit hook, which is faster but weaker — the hook
+inspects the working tree rather than the snapshot being committed, and it is not
+cloned. Set it up again after a fresh clone with:
 
 ```
 printf '#!/bin/sh\nexec make check\n' > .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
