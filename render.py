@@ -16,6 +16,7 @@ Two modes:
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 
@@ -184,6 +185,22 @@ def render(document: dict, names: dict[int, str], layers: list[int]) -> str:
 # --------------------------------------------------------------------------
 # Diff
 # --------------------------------------------------------------------------
+def _same(ours, theirs) -> bool:
+    """Compare two loaded JSON values the way Vial and the firmware read them.
+
+    ``==`` is not enough: in Python ``True == 1``, ``False == 0`` and
+    ``-1 == -1.0``, so a value whose type changed would be reported as no
+    difference.  ``gen_vil.py --check`` compares through ``cornix.canonical``
+    for the same reason, and the two must agree.
+    """
+    return cornix.canonical(ours) == cornix.canonical(theirs)
+
+
+def _json(value) -> str:
+    """Show a value as the file spells it, so ``1 -> true`` stays visible."""
+    return json.dumps(value, ensure_ascii=False)
+
+
 def diff(current: dict, other: dict) -> list[str]:
     """Human-readable differences between two ``.vil`` documents."""
     report: list[str] = []
@@ -191,8 +208,8 @@ def diff(current: dict, other: dict) -> list[str]:
     for key in sorted(set(current) | set(other)):
         if key in ("layout", "settings", "encoder_layout"):
             continue
-        if current.get(key) != other.get(key):
-            report.append(f"field {key}: {current.get(key)!r} -> {other.get(key)!r}")
+        if not _same(current.get(key), other.get(key)):
+            report.append(f"field {key}: {_json(current.get(key))} -> {_json(other.get(key))}")
 
     for layer, row, col, value in cornix.iter_slots(current["layout"]):
         try:
@@ -200,19 +217,21 @@ def diff(current: dict, other: dict) -> list[str]:
         except (IndexError, KeyError):
             report.append(f"layer {layer} [{row}][{col}]: missing in the other file")
             continue
-        if value != theirs:
+        if not _same(value, theirs):
             where = cornix.SLOT_NAMES.get((row, col), "")
             suffix = f"  ({where})" if where else ""
             report.append(f"layer {layer} [{row}][{col}]: {value} -> {theirs}{suffix}")
 
-    if current.get("encoder_layout") != other.get("encoder_layout"):
+    if not _same(current.get("encoder_layout"), other.get("encoder_layout")):
         report.append("encoder_layout differs")
 
     ours, theirs = current.get("settings", {}), other.get("settings", {})
     for qsid in sorted(set(ours) | set(theirs), key=int):
-        if ours.get(qsid) != theirs.get(qsid):
+        if not _same(ours.get(qsid), theirs.get(qsid)):
             name = cornix.QMK_SETTING_NAMES.get(qsid, f"qmk_setting {qsid}")
-            report.append(f"setting {qsid} ({name}): {ours.get(qsid)} -> {theirs.get(qsid)}")
+            report.append(
+                f"setting {qsid} ({name}): {_json(ours.get(qsid))} -> {_json(theirs.get(qsid))}"
+            )
     return report
 
 
@@ -224,7 +243,7 @@ def visual_literals(current: dict, other: dict) -> list[str]:
     """
     out: list[str] = []
     for layer in cornix.OWNED_LAYERS:
-        if current["layout"][layer] == other["layout"][layer]:
+        if _same(current["layout"][layer], other["layout"][layer]):
             continue
         view = cornix.matrix_to_visual(other["layout"][layer])
         out.append(f"# layer {layer}, as written in keymap.py (visual order)")
