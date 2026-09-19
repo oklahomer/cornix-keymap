@@ -1,8 +1,10 @@
 """The keymap itself.  This file is the source of truth.
 
 Everything here is a literal.  There is no logic: ``gen_vil.py`` turns these
-layers into ``build/oklahomer.vil`` and ``render.py`` turns any ``.vil`` back
-into the diagrams below, so the picture and the data can never drift apart.
+layers into ``build/oklahomer.vil``, and ``render.py`` renders any ``.vil`` as the
+diagrams in ``docs/layers.md``.  The diagrams *below* are a different thing: nothing
+reads them -- not the generator, not the renderer, not the tests -- so they stay
+true only if every edit changes the picture along with the literal.
 
 How to read a layer
 -------------------
@@ -10,8 +12,10 @@ Both halves are written **visually, left to right**, exactly as the keys sit on
 the desk.  On the right half that means inner-to-outer; the matrix stores that
 row reversed, and ``cornix.to_storage_right`` is the only code that knows it.
 
-``left_bottom`` and ``right_bottom`` are six keycodes each: the three flat keys
-under the outer columns, then the three angled thumb-arc keys.
+``left_bottom`` and ``right_bottom`` are six keycodes each, in the same visual
+order as the rows above.  ``left_bottom`` runs outer to inner: the three flat keys
+under the outer columns, then the three angled thumb-arc keys.  ``right_bottom``
+runs inner to outer, so the arc comes first.
 
 ``~`` in the diagrams is ``KC_TRNS`` (falls through to the layer below) and a
 blank cell is ``KC_NO``.

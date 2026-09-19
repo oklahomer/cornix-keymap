@@ -229,10 +229,11 @@ class Layer(NamedTuple):
     """One layer, written the way the keyboard looks.
 
     ``left_main`` / ``right_main`` are three rows of six keycodes, and
-    ``left_bottom`` / ``right_bottom`` are six keycodes: the three flat keys
-    then the three thumb-arc keys.  **Both halves are written visually, left to
-    right.**  On the right half that means inner-to-outer, and
-    ``to_storage_right`` reverses it on the way into the matrix.
+    ``left_bottom`` / ``right_bottom`` are six keycodes.  **Both halves are
+    written visually, left to right.**  On the left that is outer-to-inner, so
+    ``left_bottom`` is the three flat keys and then the three thumb-arc keys; on
+    the right it is inner-to-outer, so ``right_bottom`` is the arc first.
+    ``to_storage_right`` reverses the right half on the way into the matrix.
     """
 
     index: int

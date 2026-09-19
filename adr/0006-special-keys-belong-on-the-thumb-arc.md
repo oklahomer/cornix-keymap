@@ -36,8 +36,10 @@ Combine it with dual-role keys (ADR 4) so three arc keys carry five functions.
 - The stock keymap treats the innermost arc key as the thumb's home position and
   puts Space there. This layout instead puts the previous keyboard's home thumb key
   in the middle position, keeping the relative order intact. If the innermost key
-  turns out to be the comfortable one in practice, swapping positions 4 and 5 of
-  `left_bottom` and `right_bottom` is a two-line change.
+  turns out to be the comfortable one in practice, swapping `[3][4]` with `[3][5]`
+  and `[7][4]` with `[7][5]` is a two-line change — the last two entries of
+  `left_bottom`, and the first two of `right_bottom`, which is written inner to
+  outer.
 - The flat position between the media-layer key and `Alt` is left empty on the base
   layer, because it was empty on the previous keyboard too. It is the obvious place
   for anything new.
