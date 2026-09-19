@@ -24,8 +24,9 @@ are committed, the way a compiled firmware image used to be committed next to it
 source.
 
 The board is never the source of truth. An edit made in the GUI is a proposal:
-`make import FILE=<export>` diffs it against the artifact, prints every row of each
-changed layer as source literals, and exits non-zero. The change is then applied to
+`make import FILE=<export>` diffs it against the artifact, prints every keycode row
+and both encoder fields of each changed owned layer — 0 to 2 — as source literals,
+and exits non-zero. The change is then applied to
 `keymap.py` by hand so that the diagram and the reasoning stay attached to it.
 
 ## Consequences

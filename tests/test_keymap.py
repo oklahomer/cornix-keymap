@@ -304,7 +304,7 @@ class RenderTest(unittest.TestCase):
         self.assertEqual(len(report), 1, report)
         self.assertIn("layer 1 [0][6]", report[0])
 
-    def test_emitted_literals_cover_every_layer_the_diff_reports(self):
+    def test_emitted_literals_cover_every_changed_owned_layer(self):
         document = build_document()
         layout = [[list(row) for row in layer] for layer in document["layout"]]
         layout[1][0][6] = float(cornix.UNUSED)

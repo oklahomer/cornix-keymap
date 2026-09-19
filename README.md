@@ -134,7 +134,8 @@ make import FILE=~/Downloads/whatever.vil
 ```
 
 It diffs the export against the committed artifact, names the slots that changed,
-prints the affected rows as `keymap.py` literals, and exits non-zero. Apply the
+prints every keycode row and both encoder fields of each changed owned layer — 0 to
+2 — as `keymap.py` literals, and exits non-zero. Apply the
 change to the source by hand — that keeps the diagram and the reason for the change
 attached to it — then `make all` and commit.
 

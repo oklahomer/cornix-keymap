@@ -237,7 +237,7 @@ def diff(current: dict, other: dict) -> list[str]:
 
 
 def visual_literals(current: dict, other: dict) -> list[str]:
-    """For every layer that differs, print the other file's rows as source literals.
+    """For every owned layer that differs, print its rows and encoders as literals.
 
     ``keymap.py`` is never rewritten automatically: the diagrams and the intent
     comments in it are the point of the file.  This just saves the retyping.
