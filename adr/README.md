@@ -9,7 +9,7 @@ source and the README link to the ones that explain a particular choice.
 | [2](0002-text-definition-is-the-source-of-truth.md) | A text definition is the source of truth, not the board |
 | [3](0003-split-responsibility-between-firmware-and-karabiner.md) | Firmware settings and mapping-software settings have separate jobs |
 | [4](0004-reproduce-dual-role-keys-with-firmware-mod-tap.md) | Dual-role keys are firmware mod-taps, tuned to decide on events not time |
-| [5](0005-numbers-and-function-keys-live-on-the-home-rows.md) | Numbers and function keys live on the QWERTY row, reached by a layer |
+| [5](0005-numbers-and-function-keys-live-on-the-qwerty-row.md) | Numbers and function keys live on the QWERTY row, reached by a layer |
 | [6](0006-special-keys-belong-on-the-thumb-arc.md) | Special keys go on the thumb arc, and keep their old order |
 | [7](0007-inner-column-moves-to-the-encoder-pushes.md) | The inner column moves to the encoder push-buttons |
 | [8](0008-keep-paired-modifiers-distinct.md) | Left and right modifiers stay separate physical keys |
