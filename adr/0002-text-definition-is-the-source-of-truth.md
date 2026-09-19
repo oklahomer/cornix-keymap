@@ -24,14 +24,15 @@ are committed, the way a compiled firmware image used to be committed next to it
 source.
 
 The board is never the source of truth. An edit made in the GUI is a proposal:
-`make import FILE=<export>` diffs it against the artifact, prints the changed rows
-as source literals, and exits non-zero. The change is then applied to `keymap.py` by
-hand so that the diagram and the reasoning stay attached to it.
+`make import FILE=<export>` diffs it against the artifact, prints every row of each
+changed layer as source literals, and exits non-zero. The change is then applied to
+`keymap.py` by hand so that the diagram and the reasoning stay attached to it.
 
 ## Consequences
 
-- `make check` regenerates everything and fails if the committed files are stale,
-  which catches the case where someone edits the source and forgets to rebuild.
+- `make check` compares the committed files against what the source produces, without
+  rewriting either, and fails if they are stale — which catches the case where someone
+  edits the source and forgets to rebuild.
 - Round-tripping a GUI edit is deliberately manual. Rewriting `keymap.py`
   automatically would destroy the diagrams, which are the reason the file exists.
 - The layer definitions are written in visual order for both halves. The right-half
