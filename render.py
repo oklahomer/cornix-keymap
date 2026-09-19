@@ -121,11 +121,12 @@ def render_layer(matrix, index: int, name: str = "") -> str:
     lines.append(f"  encoder push   [2,6] {enc_left:<8}   [5,6] {enc_right}")
     lines.append("")
 
-    # Bottom row: three flat keys, then the three-key thumb arc.
+    # Bottom row: two groups of three, in visual order.  On the left that is the
+    # flat keys and then the thumb arc; on the right the arc comes first.
     def split_line(cells, edge):
-        flat = edge + edge.join(cells[:3]) + edge
-        arc = edge + edge.join(cells[3:]) + edge
-        return flat + "  " + arc
+        first = edge + edge.join(cells[:3]) + edge
+        second = edge + edge.join(cells[3:]) + edge
+        return first + "  " + second
 
     def keys_line(keys):
         return split_line([_cell(k) for k in keys], "|")
