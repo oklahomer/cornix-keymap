@@ -56,12 +56,13 @@ rejects nested modifier wrappers for that reason.
 ## Consequences
 
 - Pressing a knob is not pressing a key. The right push is a deliberate, occasional
-  action, so the different feel is acceptable there — and putting sleep behind a knob
-  press makes it harder to trigger by accident than it was in a corner of the old
-  top row. The left push turned out not to be occasional: Option+Space is in daily
-  use, and the knob's press force is too high for a key reached that often. The same
-  chord is therefore also on SYMB `[1][0]`. The encoder keeps it, so this is a
-  duplicate rather than a move, and the table above still holds.
+  action, so the different feel is acceptable there — and putting the lock screen
+  behind a knob press makes it harder to trigger by accident than the sleep chord it
+  replaces was in a corner of the old top row. The left push turned out not to be
+  occasional: Option+Space is in daily use, and the knob's press force is too high
+  for a key reached that often. The same chord is therefore also on SYMB `[1][0]`.
+  The encoder keeps it, so this is a duplicate rather than a move, and the table
+  above still holds.
 - If a board without the encoder modules is ever used, these two slots vanish. The
   fallback is the empty flat bottom key on each half.
 - Every other column-6 slot must stay unused (`-1`) on every layer. The generator
