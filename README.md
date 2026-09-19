@@ -48,7 +48,7 @@ must stay `-1`.
 | # | Name | Held with | Contents |
 | --- | --- | --- | --- |
 | 0 | BASE | — | letters, the two dual-role thumb keys, modifiers |
-| 1 | SYMB | `[3][3]` / `[7][3]` | digits on the QWERTY row, punctuation on the home row |
+| 1 | SYMB | `[3][3]` / `[7][3]` | digits on the QWERTY row, punctuation on the home row, Option+Space on the outer column |
 | 2 | MDIA | `[3][2]` / `[7][2]` | `F1`-`F12`, volume, mouse keys, bootloader |
 
 Rendered diagrams and the full matrix tables: [`docs/layers.md`](docs/layers.md).
@@ -159,8 +159,10 @@ makes these three worth typing:
 
 Then, on SYMB: hold the right layer key and type the left QWERTY row for `12345`;
 hold the left one and type the right row for `67890` (reversed: `09876`); `-=[]`
-under `JKL;` (reversed: `][=-`). On MDIA: `F1`-`F5` and `F6`-`F10` on the QWERTY
-row, `F11` and `F12` stacked below `F10`.
+under `JKL;` (reversed: `][=-`). Still holding the right layer key, press the left
+outer home key `[1][0]`: it must send Option+Space, exactly as the left encoder push
+does on the base layer. On MDIA: `F1`-`F5` and `F6`-`F10` on the QWERTY row, `F11`
+and `F12` stacked below `F10`.
 
 **Dual-role keys.** Hold the left thumb Escape and tap `a`: it must produce `A`, not
 `a`. Tap it alone: Escape. Hold the right thumb Space and tap `a`: Control+A. Then
@@ -173,12 +175,14 @@ firmware is ignoring it.
 
 **Modifiers.** With an event viewer open, the two thumb Command keys must report
 *left* and *right* Command separately, the two outer bottom keys *left* and *right*
-Option, and the left home-row pinky *left Control* rather than Caps Lock.
+Option, and the left home-row pinky *left Control* rather than Caps Lock. Test that
+last one on the base layer: on SYMB the same key sends Option+Space instead.
 
 **Encoder pushes.** `[5][6]` on the base layer locks the screen (Ctrl+Cmd+Q) and
 `[2][6]` sends Option+Space. If one does nothing, try the other: if both are dead
 the problem is the encoder slot rather than the keycode, which the Matrix Tester
-will confirm.
+will confirm. Option+Space is deliberately duplicated on SYMB `[1][0]`, so that key
+working while `[2][6]` is dead points at the encoder slot too.
 
 **Careful with one key.** `[3][0]` on MDIA enters the bootloader; recovering from
 that means double-tapping the reset button and reflashing.

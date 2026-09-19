@@ -44,7 +44,7 @@ Encoder rotation (unchanged from the stock keymap): encoder 0: Vol- / Vol+, enco
 ,------+------+------+------+------+------.    ,------+------+------+------+------+------.
 |  ~   |  1   |  2   |  3   |  4   |  5   |    |  6   |  7   |  8   |  9   |  0   |  ~   |
 |------+------+------+------+------+------|    |------+------+------+------+------+------|
-|  ~   | Tab  |  `   |  \   |  "   | BkSp |    |      |  -   |  =   |  [   |  ]   |  ~   |
+|OptSpc| Tab  |  `   |  \   |  "   | BkSp |    |      |  -   |  =   |  [   |  ]   |  ~   |
 |------+------+------+------+------+------|    |------+------+------+------+------+------|
 |  ~   |      |      |Ctl+[ |      |      |    |      |      |  ~   |  ~   |  ~   |  ~   |
 `------+------+------+------+------+------'    `------+------+------+------+------+------'
@@ -60,7 +60,7 @@ Encoder rotation (unchanged from the stock keymap): encoder 0: Vol- / Vol+, enco
 | row | col0 | col1 | col2 | col3 | col4 | col5 | col6 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 (L) | `KC_TRNS` | `KC_1` | `KC_2` | `KC_3` | `KC_4` | `KC_5` | `-` |
-| 1 (L) | `KC_TRNS` | `KC_TAB` | `KC_GRAVE` | `KC_BSLASH` | `KC_QUOTE` | `KC_BSPACE` | `-` |
+| 1 (L) | `LALT(KC_SPACE)` | `KC_TAB` | `KC_GRAVE` | `KC_BSLASH` | `KC_QUOTE` | `KC_BSPACE` | `-` |
 | 2 (L) | `KC_TRNS` | `KC_NO` | `KC_NO` | `LCTL(KC_LBRACKET)` | `KC_NO` | `KC_NO` | `RALT(KC_M)` |
 | 3 (L) | `KC_TRNS` | `KC_NO` | `KC_NO` | `KC_NO` | `KC_TRNS` | `KC_TRNS` | `-` |
 | 4 (R) | `KC_TRNS` | `KC_0` | `KC_9` | `KC_8` | `KC_7` | `KC_6` | `-` |
