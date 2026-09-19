@@ -81,7 +81,7 @@ SYMB_LAYER = Layer(
 ,-----+-----+-----+-----+-----+-----.                 ,-----+-----+-----+-----+-----+-----.
 |  ~  |  1  |  2  |  3  |  4  |  5  |                 |  6  |  7  |  8  |  9  |  0  |  ~  |
 |-----+-----+-----+-----+-----+-----|                 |-----+-----+-----+-----+-----+-----|
-|  ~  | Tab |  `  |  \  |  "  |BkSp |                 |     |  -  |  =  |  [  |  ]  |  ~  |
+|OptSp| Tab |  `  |  \  |  "  |BkSp |                 |     |  -  |  =  |  [  |  ]  |  ~  |
 |-----+-----+-----+-----+-----+-----+-----.     ,-----+-----+-----+-----+-----+-----+-----|
 |  ~  |     |     |Ctl+[|     |     |RAl+M|     |     |     |     |  ~  |  ~  |  ~  |  ~  |
 `-----+-----+-----+-----+-----+-----|     |     |     |-----+-----+-----+-----+-----+-----'
@@ -94,11 +94,20 @@ Digits sit on the QWERTY row, which is the whole reason this board can lose a
 number row without losing anything (adr/0005).  Hold the layer key on the half
 opposite the digits you are typing.  RAl+M is Mission Control, delivered as a
 Right Option chord for the mapping software to catch (adr/0003).
+
+OptSp is Option+Space, the same chord the left encoder push sends on BASE.  The
+knob's press force is too high for a key used this often, so it has a second
+home here; the encoder keeps it too, so this is a duplicate and not a move
+(adr/0007).  The slot used to be ``~``, which means holding SYMB no longer
+passes the left pinky's Control through.  Control itself is untouched on BASE,
+and the one Control chord this layer cares about, Ctl+[, has its own key.
 """,
     left_main=[
-        [__, "KC_1",   "KC_2",     "KC_3",       "KC_4",     "KC_5"],
-        [__, "KC_TAB", "KC_GRAVE", "KC_BSLASH",  "KC_QUOTE", "KC_BSPACE"],
-        [__, XX,       XX,         "LCTL(KC_LBRACKET)", XX,  XX],
+        [__,               "KC_1",   "KC_2",     "KC_3",       "KC_4",     "KC_5"],
+        # [1][0] was ``~``.  Option+Space is wanted from a key rather than the
+        # stiff encoder push, which still sends it on BASE (adr/0007).
+        ["LALT(KC_SPACE)", "KC_TAB", "KC_GRAVE", "KC_BSLASH",  "KC_QUOTE", "KC_BSPACE"],
+        [__,               XX,       XX,         "LCTL(KC_LBRACKET)", XX,  XX],
     ],
     left_bottom=[__, XX, XX, XX, __, __],
     left_encoder="RALT(KC_M)",
@@ -226,7 +235,7 @@ ERGODOX_DISPOSITION: dict[str, tuple[str, str]] = {
     "MO(0)": (DROPPED, "belonged to the APP layer, which is gone"),
     "OSL(3)": (DROPPED, "APP layer removed; press Right Option + letter instead"),
     # -- chords ------------------------------------------------------------
-    "LALT(KC_SPACE)": (KEPT, "moved to the left encoder push"),
+    "LALT(KC_SPACE)": (KEPT, "left encoder push, and SYMB [1][0] for daily use"),
     # The ErgoDox chord slept the machine.  Locking the screen is what is
     # actually wanted from that key, so it is a different shortcut, not a
     # transliteration of the old one.  See adr/0007.
