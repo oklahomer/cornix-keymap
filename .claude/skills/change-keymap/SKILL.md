@@ -67,11 +67,10 @@ step sends you to it:
      position, for example `[3][1]`. A position named by its base-layer letter — "the
      Z position" — is the same `[row][col]` on the target layer.
    - Map positions to literals with the coordinate comments above `left_bottom` and
-     `right_bottom` and the numbers under the rendered diagram. **Do not trust the
-     module docstring's "the three flat keys …, then the three angled thumb-arc
-     keys":** that holds for `left_bottom` only. `right_bottom` is written inner to
-     outer, so it is the arc first — `[7][5]`, `[7][4]`, `[7][3]` — then the flat keys
-     `[7][2]`, `[7][1]`, `[7][0]`.
+     `right_bottom` and the numbers under the rendered diagram. `left_bottom` runs
+     outer to inner: the flat keys `[3][0]`, `[3][1]`, `[3][2]`, then the arc `[3][3]`,
+     `[3][4]`, `[3][5]`. `right_bottom` runs inner to outer, so it is the arc first —
+     `[7][5]`, `[7][4]`, `[7][3]` — then the flat keys `[7][2]`, `[7][1]`, `[7][0]`.
    - The right half is written in visual order, inner to outer; the matrix stores it
      reversed (CLAUDE.md, "Writing a layer").
    - A slot is empty only when it holds `XX` — `KC_NO`, a blank cell. `__` — `KC_TRNS`,
